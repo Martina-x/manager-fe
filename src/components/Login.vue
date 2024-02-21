@@ -1,6 +1,25 @@
 <script>
 export default {
-  name: 'Login'
+  name: 'Login',
+  mounted(){
+    // 调用request的第一种写法
+    /* this.$request({
+      method: 'get',
+      url: '/login',
+      data: {
+        name: 'sataa'
+      }
+    }).then(res => {
+      console.log(res);
+    }).catch(err => {
+      console.error(err);
+    }) */
+
+    // 调用request的第二种写法
+    this.$request.get('/login', {name: 'sataa'}, {mock: true, loading: true}).then(res => {
+      console.log(res);
+    })
+  }
 }
 </script>
 
