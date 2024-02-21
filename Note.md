@@ -138,3 +138,89 @@ export default {
 因为我们在 `setup` 里面没有访问 `this`，所以我们不能再直接访问 `this.$router` 。作为替代，我们使用 `useRouter` 函数
 
 `this.$router` 与直接使用通过 `createRouter` 创建的 `router` 实例完全相同。我们使用 `this.$router` 的原因是，我们不想在每个需要操作路由的组件中都导入路由。
+
+
+
+### axios二次封装
+
+- 创建axios实例
+
+- 请求封装
+
+  - 检查是否携带了token字段，若无则动态赋值
+
+- 响应拦截
+
+  - 判断状态码
+
+- 封装请求核心函数request
+
+  - 判断`method`有无，若无则默认`get`请求
+
+  - 确保接口地址是正确的，特别要确保生产环境下baseURL是否用的是线上的baseApi，而不是mockApi，无论mock是否为true
+
+    ```js
+    if (config.env === 'prod') {
+        service.defaults.baseURL = config.baseApi; // 只要是生产环境都要指向baseApi
+      }else {
+        service.defaults.baseURL = config.mock ? config.mockApi : config.baseApi;
+      }
+    ```
+
+  - 最终调用的是service，然后将options传入，`return service(options);`
+
+- 为了能够通过`request.method()`来发送请求：
+
+  ```js
+  ['get', 'post', 'put', 'delete', 'patch'].forEach(item => {
+    request[item] = (url, data, options) => {
+      return request({
+        method: item,
+        url, 
+        data, 
+        ...options
+      });
+    }
+  })
+  ```
+
+  其实就是一样调用`request`，只不过把`method`通过`item`来赋值
+
+- 全局导入
+
+  ```js
+  // main.js
+  import { createApp } from 'vue'
+  import App from './App.vue'
+  import request from './utils/request';
+  const app = createApp(App)
+  app.config.globalProperties.$request = request;
+  ```
+
+- 两种调用方式
+
+  - `this.$request`
+
+    ```js
+    this.$request({
+          method: 'get',
+          url: '/login',
+          data: {
+            name: 'sataa'
+          }
+        }).then(res => {
+          console.log(res);
+        }).catch(err => {
+          console.error(err);
+        })
+    ```
+
+  - `this.$request.method`
+
+    ```js
+    this.$request.get('/login', {name: 'sataa'}, {mock: true, loading: true}).then(res => {
+          console.log(res);
+        })
+    ```
+
+    
