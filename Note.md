@@ -186,7 +186,7 @@ export default {
 
   其实就是一样调用`request`，只不过把`method`通过`item`来赋值
 
-- 全局导入
+- 挂载
 
   ```js
   // main.js
@@ -224,3 +224,52 @@ export default {
     ```
 
     
+
+### storage二次封装
+
+封装的目的是为了统一管理，不需要每次都调用`window.loaclStorage.xxx`，加之storage只能存入字符串类型的数据，所以要进行封装。
+
+当项目比较复杂或者同时多个项目的时候，同名变量可能会有覆盖的风险（同一个浏览器），所以在这里提出一个命名空间namespace的概念，写在配置文件中统一管理，之后基于命名空间存取数据。
+
+封装：不要忘记JSON序列化和反序列化
+
+```js
+// utils/storage.js
+/**
+ * Storage二次封装
+ */
+import config from "./../config";
+
+export default {
+  getStorage() {
+    return JSON.parse(window.localStorage.getItem(config.namespace) || "{}");
+  },
+  setItem(key, val) {
+    let storage = this.getStorage();
+    storage[key] = val;
+    window.localStorage.setItem(config.namespace, JSON.stringify(storage));
+  },
+  getItem(key) {
+    return this.getStorage()[key];
+  },
+  clearItem(key) {
+    let storage = this.getStorage();
+    delete storage[key];
+    window.localStorage.setItem(config.namespace, JSON.stringify(storage));
+  },
+  clearAll() {
+    window.localStorage.clear();
+  }
+}
+```
+
+挂载：
+
+```js
+// main.js
+import storage from './utils/storage';
+app.config.globalProperties.$storage = storage;
+```
+
+
+

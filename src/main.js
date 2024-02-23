@@ -5,7 +5,7 @@ import 'element-plus/dist/index.css'
 import App from './App.vue'
 import router from "./router";
 import request from './utils/request';
-
+import storage from './utils/storage';
 const app = createApp(App)
 
 app
@@ -16,3 +16,4 @@ app
 console.log("环境变量=>", import.meta.env);
 
 app.config.globalProperties.$request = request;
+app.config.globalProperties.$storage = storage;
