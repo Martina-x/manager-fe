@@ -420,3 +420,40 @@ app.use(store)
 // Login.vue
 this.$store.commit("saveUserInfo", res);
 ```
+
+## 连通后台
+
+- 跨域配置
+
+  ```js
+  // vite.config.js
+  export default defineConfig({
+    server: {
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3000',
+        }
+      }
+    }
+  })
+  ```
+
+- 取消`mock`状态
+
+  ```js
+  // config/index.js
+  /**
+   * 环境配置封装
+   */
+  const EnvConfig = {
+    dev: {
+      baseApi: '/api'
+    },
+  }
+  
+  export default {
+    mock: false,
+  }
+  ```
+
+<img src="https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240305175641396.png" alt="image-20240305175641396" style="zoom:50%;" />

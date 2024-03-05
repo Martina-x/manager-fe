@@ -30,7 +30,7 @@ service.interceptors.response.use(req => {
   if (code === 200) {
     ElMessage.success(msg);
     return data; // 直接返回data即可，这样可以直接拿到数据，不需要在每个页面都调用then方法
-  }else if (code === 40001) {
+  } else if (code === 500001) {
     // 登录拦截
     ElMessage.error(TOKEN_INVALID);
     setTimeout(() => {
