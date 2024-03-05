@@ -1,4 +1,4 @@
-### 项目初始化
+# 项目初始化
 
 ```json
 {
@@ -27,9 +27,9 @@ VITE_name=SATAA
 
 
 
-### 路由封装
+# 路由封装
 
-#### 路由配置和全局导入
+## 路由配置和全局导入
 
 ```js
 // router/index.js
@@ -141,7 +141,7 @@ export default {
 
 
 
-### axios二次封装
+# axios二次封装
 
 - 创建axios实例
 
@@ -223,9 +223,40 @@ export default {
         })
     ```
 
-    
+- 封装到api目录下集中管理
 
-### storage二次封装
+  ```js
+  // api/index.js
+  import request from './../utils/request'
+  export default {
+    login(params) {
+      request({
+        url: '',
+        data: params,
+        mock: true
+      })
+    }
+  }
+  
+  // Login.vue
+  this.$api.login(...)
+  ```
+
+  不能用`this`获取`request`，虽然先前封装的`request`已经挂载到`main.js`上，但是这个`index`文件不在vue组件实例中，所以访问不到vue对象.
+
+  虽然在前面的`config/index.js`中设置了全局`mock`为`true`，但是这里的局部`mock`优先级要更高，对封装的`request`方法做修改：
+
+  ```js
+  if(typeof options.mock != 'undefined') {
+    config.mock = options.mock;
+  }
+  ```
+
+  
+
+  最后也要将这个`index`文件进行挂载
+
+# storage二次封装
 
 封装的目的是为了统一管理，不需要每次都调用`window.loaclStorage.xxx`，加之storage只能存入字符串类型的数据，所以要进行封装。
 
@@ -269,6 +300,131 @@ export default {
 // main.js
 import storage from './utils/storage';
 app.config.globalProperties.$storage = storage;
+```
+
+
+
+# 登录
+
+## 表单设计
+
+```vue
+<el-form ref="userForm" :model="user" :rules="rules" status-icon>
+  <el-form-item prop="userName">
+    <el-input type="text" prefix-icon="User" v-model="user.userName" />
+  </el-form-item>
+  <el-form-item>
+    <el-button class="btn-login" type="primary" @click="login">登录</el-button>
+  </el-form-item>
+</el-form>
+```
+
+校验规则
+
+```js
+data() {
+  return {
+    user: {
+      userName: '',
+      userPwd: ''
+    },
+    rules: {
+      userName: {
+        required: true, message: "请输入用户名", trigger: "blur"
+      }
+    }
+  }
+}
+```
+
+`el-form`上的ref用于操作原生dom
+
+```js
+login() {
+  // 校验
+  this.$refs.userForm.validate((valid)=>{
+    if(valid) {
+      // ...
+    }else{
+      // ...
+    }
+  })
+}
+```
+
+## 接口请求
+
+```js
+// api/index.js
+import request from './../utils/request'
+export default {
+  login(params) {
+    request({
+      url: '',
+      data: params,
+      mock: true
+    })
+  }
+}
+
+// Login.vue
+this.$api.login(this.user).then(res => {...})
+```
+
+## 数据存储
+
+vuex的使用逻辑是，通过用户行为dispatch一个action，进而commit一个mutation，mutation保存状态
+
+```js
+// store/index.js
+/**
+ * Vuex状态管理
+ */
+import { createStore } from "vuex";
+import storage from "../utils/storage";
+import mutations from "./mutations";
+
+const store = {
+  userInfo: "" || storage.getItem("userInfo")
+}
+
+export default createStore({
+  store,
+  mutations
+})
+```
+
+封装Mutations业务层数据提交，修改state中的数据时，也要更新storage中的数据
+
+```js
+// store.mutations.js
+/**
+ * Mutations业务层数据提交
+ */
+import storage from "../utils/storage"
+export default {
+  saveUserInfo(state, userInfo) {
+    state.userInfo = userInfo;
+    storage.setItem("userInfo", userInfo); 
+  }
+}
+```
+
+加载store
+
+```js
+// main.js
+import store from "./store";
+app.use(store)
+```
+
+`.use`用于插件加载，其内部会把对象挂载globalProperty上
+
+使用vuex存储数据
+
+```js
+// Login.vue
+this.$store.commit("saveUserInfo", res);
 ```
 
 
