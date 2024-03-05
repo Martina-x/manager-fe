@@ -55,6 +55,9 @@ function request(options) {
   if (options.method.toLowerCase() === 'get') {
     options.params = options.data; // get请求的参数名是params，post请求的参数名是data，但是在调用request的时候统一传入data字段，但是这里也还是要做一个转换，减少前端开发成本
   }
+  if (typeof options.mock != 'undefined') {
+    config.mock = options.mock;
+  }
   // 接口地址一定不能搞错，特别要确保生产环境下baseURL是否用的是线上的baseApi，而不是mockApi，无论mock是否为true
   if (config.env === 'prod') {
     service.defaults.baseURL = config.baseApi; // 只要是生产环境都要指向baseApi

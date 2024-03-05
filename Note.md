@@ -7,9 +7,6 @@
   },
 }
 
-```
-
-```js
 // .env.dev
 NODE_ENV=development
 VITE_name=SATAA
@@ -75,9 +72,6 @@ const router = createRouter({
 })
 
 export default router;
-```
-
-```js
 // main.js
 import { createApp } from 'vue'
 import App from './App.vue'
@@ -426,6 +420,3 @@ app.use(store)
 // Login.vue
 this.$store.commit("saveUserInfo", res);
 ```
-
-
-
