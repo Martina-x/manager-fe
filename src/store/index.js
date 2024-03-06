@@ -6,11 +6,11 @@ import { createStore } from "vuex";
 import storage from "../utils/storage";
 import mutations from "./mutations";
 
-const store = {
-  userInfo: "" || storage.getItem("userInfo")
+const state = {
+  userInfo: "" || storage.getItem("userInfo"),
 }
 
 export default createStore({
-  store,
+  state,
   mutations
 })

@@ -9,7 +9,7 @@ const routes = [
       title: '首页'
     },
     path: '/',
-    redirect: '/welcome',
+    redirect: '/login',
     component: Home,
     children: [
       {

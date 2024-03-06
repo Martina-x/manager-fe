@@ -80,3 +80,7 @@ a{
     padding: 10px;
   }
 }
+
+.el-tooltip__trigger:focus-visible {
+  outline: unset;
+}

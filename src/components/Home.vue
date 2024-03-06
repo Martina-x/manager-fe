@@ -86,12 +86,10 @@ export default {
     },
     handleLogout(key) {
       if (key === 'email') return;
+      this.$store.commit("saveUserInfo", "");
+      this.userInfo = null;
       this.$router.push("/login");
-      setTimeout(() => {
-        this.$store.commit("saveUserInfo", "");
-        this.userInfo = null;
-      }, 800);
-    },
+    }
   }
 }
 </script>
