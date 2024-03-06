@@ -3,7 +3,7 @@
     <div :class="['nav-side', isCollapse ? 'fold' : 'unfold']">
       <!-- 系统LOGO -->
       <div class="logo">
-        <img src="./../assets/logo.png" alt="">
+        <img src="@/assets/logo.png" alt="">
         <span>Manager</span>
       </div>
       <!-- 导航菜单 -->
@@ -61,8 +61,8 @@
 </template>
 
 <script>
-import TreeMenu from "./../components/TreeMenu.vue";
-import BreadCrumb from "./../components/BreadCrumb.vue";
+import TreeMenu from "@/components/TreeMenu.vue";
+import BreadCrumb from "@/components/BreadCrumb.vue";
 export default {
   name: 'Home',
   components: { TreeMenu, BreadCrumb },

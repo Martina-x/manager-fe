@@ -1,7 +1,7 @@
 /**
  * Storage二次封装
  */
-import config from "./../config";
+import config from "@/config";
 
 export default {
   getStorage() {
