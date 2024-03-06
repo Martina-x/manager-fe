@@ -538,3 +538,109 @@ export default {
 
 - 若当前菜单项children有值并且有子菜单项（而非全是按钮），则判断为父级菜单，使用`el-sub-menu`渲染。当前菜单项的子级渲染在父菜单之下，故在`el-sub-menu`内部进行递归，放置`tree-menu`组件
 - 若当前菜单项children没有值或者子级只有按钮，则判断为子级菜单使用`el-menu-item`渲染。
+
+## 面包屑
+
+```vue
+<!-- BreadCrumb.vue -->
+<template>
+  <el-breadcrumb :separator-icon="ArrowRight">
+    <el-breadcrumb-item v-for="(item, index) in breadList" :key="item.path">
+      <router-link v-if="index == 0" to="/">{{ item.meta.title }}</router-link>
+      <span v-else>{{ item.meta.title }}</span>
+    </el-breadcrumb-item>
+  </el-breadcrumb>
+</template>
+
+<script>
+import { ArrowRight } from '@element-plus/icons-vue'
+import { computed } from 'vue';
+import { useRoute } from "vue-router";
+export default {
+  name: 'BreadCrumb',
+  setup() {
+    const route = useRoute()
+    const breadList = computed(() => {
+      return route.matched;
+    });
+    return { ArrowRight, breadList }
+  }
+}
+</script>
+```
+
+为了检验面包屑效果，额外配置路由如下：
+
+```js
+import { createRouter, createWebHashHistory } from "vue-router";
+
+import Home from "./../components/Home.vue";
+
+const routes = [
+  {
+    name: 'Home',
+    meta: {
+      title: '首页'
+    },
+    path: '/',
+    redirect: '/welcome',
+    component: Home,
+    children: [
+      {
+        name: 'Welcome',
+        meta: {
+          title: '欢迎页'
+        },
+        path: '/welcome',
+        component: () => import('../views/Welcome.vue'),
+      },
+      {
+        name: 'User',
+        meta: {
+          title: '用户管理'
+        },
+        path: 'user',
+        component: () => import('../views/Welcome.vue'),
+        children: [
+          {
+            name: 'Info',
+            meta: {
+              title: '信息统计'
+            },
+            path: 'info',
+            component: () => import('../views/Welcome.vue'),
+          }
+        ]
+      }
+    ]
+  },
+  {
+    name: 'Login',
+    meta: {
+      title: '登录'
+    },
+    path: '/login',
+    component: () => import('../views/Login.vue')
+  }
+]
+
+const router = createRouter({
+  routes,
+  history: createWebHashHistory()
+})
+
+export default router;
+```
+
+效果图：
+
+<img src="https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240306235523576.png" alt="image-20240306235523576" style="zoom: 33%;" />
+
+其中，在我们的路由设计中，面包屑的第二级即为当前页面了，所以只有第一级即“首页”需要配置路由跳转目标`to`，当点击首页后，页面切换如下：
+
+<img src="https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240306235759128.png" alt="image-20240306235759128" style="zoom:33%;" />
+
+> ==注意==
+>
+> 1. 关于`<el-breadcrumb :separator-icon="ArrowRight">`，官网给出的示例用的是组合式API，原本打算用选项式来着，但是无法获取到这个icon，控制台提醒`Property "ArrowRight" was accessed during render but is not defined on instance. `
+> 2. `const route = useRoute()`一开始是定义在`computed`内部的，但是如果从`/welcome`手动输入`/user/info`并跳转会提示报错`TypeError: Cannot read properties of undefined (reading 'matched')`

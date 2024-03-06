@@ -26,7 +26,9 @@
               <Fold />
             </el-icon>
           </div>
-          <div class="bread">面包屑</div>
+          <div class="bread">
+            <BreadCrumb />
+          </div>
         </div>
 
         <div class="user-info">
@@ -60,9 +62,10 @@
 
 <script>
 import TreeMenu from "./../components/TreeMenu.vue";
+import BreadCrumb from "./../components/BreadCrumb.vue";
 export default {
   name: 'Home',
-  components: { TreeMenu },
+  components: { TreeMenu, BreadCrumb },
   data() {
     return {
       isCollapse: false,

@@ -9,7 +9,7 @@ const routes = [
       title: '首页'
     },
     path: '/',
-    redirect: '/login',
+    redirect: '/welcome',
     component: Home,
     children: [
       {
@@ -19,6 +19,24 @@ const routes = [
         },
         path: '/welcome',
         component: () => import('../views/Welcome.vue'),
+      },
+      {
+        name: 'User',
+        meta: {
+          title: '用户管理'
+        },
+        path: 'user',
+        component: () => import('../views/Welcome.vue'),
+        children: [
+          {
+            name: 'Info',
+            meta: {
+              title: '信息统计'
+            },
+            path: 'info',
+            component: () => import('../views/Welcome.vue'),
+          }
+        ]
       }
     ]
   },
