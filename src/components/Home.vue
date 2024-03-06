@@ -7,30 +7,15 @@
         <span>Manager</span>
       </div>
       <!-- 导航菜单 -->
-      <el-menu class="nav-menu" background-color="#001529" text-color="#fff" :collapse="isCollapse" router>
-        <el-sub-menu index="1">
-          <template #title>
-            <el-icon>
-              <Setting />
-            </el-icon>
-            <span>系统管理</span>
-          </template>
-          <el-menu-item index="1-1">用户管理</el-menu-item>
-          <el-menu-item index="1-2">菜单管理</el-menu-item>
-          <el-menu-item index="1-3">角色管理</el-menu-item>
-          <el-menu-item index="1-4">部门管理</el-menu-item>
-        </el-sub-menu>
-        <el-sub-menu index="2">
-
-          <template #title>
-            <el-icon>
-              <Setting />
-            </el-icon>
-            <span>审批管理</span>
-          </template>
-          <el-menu-item index="2-1">休假申请</el-menu-item>
-          <el-menu-item index="2-2">待我审批</el-menu-item>
-        </el-sub-menu>
+      <el-menu 
+        class="nav-menu" 
+        background-color="#001529" 
+        text-color="#fff" 
+        :collapse="isCollapse" 
+        router
+        :default-active="activeMenu"
+      >
+        <tree-menu :userMenu="userMenu" />
       </el-menu>
     </div>
     <div :class="['content-right', isCollapse ? 'fold' : 'unfold']">
@@ -45,8 +30,10 @@
         </div>
 
         <div class="user-info">
-          <el-badge class="notice" is-dot type="danger">
-            <el-icon><Bell /></el-icon>
+          <el-badge class="notice" :is-dot="noticeCount > 0 ? true : false" type="danger">
+            <el-icon>
+              <Bell />
+            </el-icon>
           </el-badge>
           <el-dropdown @command="handleLogout">
             <span class="user-link">
@@ -72,13 +59,22 @@
 </template>
 
 <script>
+import TreeMenu from "./../components/TreeMenu.vue";
 export default {
   name: 'Home',
+  components: { TreeMenu },
   data() {
     return {
       isCollapse: false,
-      userInfo: this.$store.state.userInfo
+      userInfo: this.$store.state.userInfo,
+      noticeCount: 0,
+      userMenu: [],
+      activeMenu: location.hash.slice(1)
     }
+  },
+  mounted() {
+    this.getNoticeCount();
+    this.getMenuList();
   },
   methods: {
     toggle() {
@@ -89,6 +85,23 @@ export default {
       this.$store.commit("saveUserInfo", "");
       this.userInfo = null;
       this.$router.push("/login");
+    },
+    async getNoticeCount() {
+      try {
+        const count = await this.$api.noticeCount();
+        this.noticeCount = count;
+      } catch (error) {
+        console.error(error); 
+      }
+      
+    },
+    async getMenuList() {
+      try {
+        const list = await this.$api.getMenuList();
+        this.userMenu = list;
+      } catch (error) {
+        console.error(error);
+      }
     }
   }
 }

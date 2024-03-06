@@ -457,3 +457,84 @@ this.$store.commit("saveUserInfo", res);
   ```
 
 <img src="https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240305175641396.png" alt="image-20240305175641396" style="zoom:50%;" />
+
+# 首页
+
+## 菜单交互及递归实现
+
+此处要实现树形菜单，数据结构如下：
+
+<img src="https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240306213312557.png" alt="image-20240306213312557" style="zoom:35%;" /><img src="https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240306213333794.png" alt="image-20240306213333794" style="zoom:33%;" />
+
+其中`parentId`为null表示当前菜单为一级菜单，比如“系统管理”，其子菜单定义在children中，比如“用户管理”，要注意的是“用户管理”菜单项children中的“新增”为按钮，区别是当menuType取值为1表示当前项为菜单，menuType取值为2表示当前项为按钮。
+
+根据接口文档，树形菜单渲染结构如下。
+
+```html
+<el-sub-menu index="1">
+  <template #title>
+    <el-icon>
+      <Setting />
+    </el-icon>
+    <span>系统管理</span>
+  </template>
+  <el-menu-item index="1-1">用户管理</el-menu-item>
+  <el-menu-item index="1-2">菜单管理</el-menu-item>
+  <el-menu-item index="1-3">角色管理</el-menu-item>
+  <el-menu-item index="1-4">部门管理</el-menu-item>
+</el-sub-menu>
+<el-sub-menu index="2">
+  <template #title>
+    <el-icon>
+      <Setting />
+    </el-icon>
+    <span>审批管理</span>
+  </template>
+  <el-menu-item index="2-1">休假申请</el-menu-item>
+  <el-menu-item index="2-2">待我审批</el-menu-item>
+</el-sub-menu>
+```
+
+为了提高效率，封装树形菜单组件。
+
+```vue
+<!-- TreeMenu.vue -->
+<template>
+  <template v-for="menu in userMenu">
+    <el-sub-menu v-if="menu.children && menu.children.length > 0 && menu.children[0].menuType == 1" :index="menu.path">
+      <template #title>
+        <!-- <el-icon>
+          <Setting />
+        </el-icon> -->
+        <component class="svgIcon" :is="menu.icon"></component>
+        <span>{{ menu.menuName }}</span>
+      </template>
+      <tree-menu :userMenu="menu.children" />
+    </el-sub-menu>
+    <el-menu-item v-else-if="menu.menuType == 1" :index="menu.path">{{ menu.menuName }}</el-menu-item>
+  </template>
+</template>
+          
+<script>
+export default {
+  name: 'TreeMenu',
+  props: {
+    userMenu: {
+      type: Array,
+      default: []
+    }
+  }
+}
+</script>
+
+<style scoped>
+.svgIcon {
+  width: 1.5em;
+  height: 1.5em;
+  margin-right: 5px;
+}
+</style>
+```
+
+- 若当前菜单项children有值并且有子菜单项（而非全是按钮），则判断为父级菜单，使用`el-sub-menu`渲染。当前菜单项的子级渲染在父菜单之下，故在`el-sub-menu`内部进行递归，放置`tree-menu`组件
+- 若当前菜单项children没有值或者子级只有按钮，则判断为子级菜单使用`el-menu-item`渲染。
