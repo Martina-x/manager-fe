@@ -6,6 +6,7 @@ import { ElMessage } from 'element-plus';
 
 import config from "@/config";
 import router from "@/router";
+import storage from "./storage";
 
 const TOKEN_INVALID = 'token认证失败，请重新登录';
 const NETWORK_INVALID = '网络请求错误，请稍后重试';
@@ -20,7 +21,8 @@ const service = axios.create({
 service.interceptors.request.use((req) => {
   // 判断是否携带jwt字段，若无则进行赋值，动态添加token
   const headers = req.headers;
-  if (!headers.Authorization) headers.Authorization = 'SATAA'
+  const token  = storage.getItem("userInfo")?.token;
+  if (!headers.Authorization) headers.Authorization = 'Bearer ' + token;
   return req;
 })
 

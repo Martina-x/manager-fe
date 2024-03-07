@@ -139,9 +139,21 @@ export default {
 
 - 创建axios实例
 
-- 请求封装
+- 请求拦截
 
   - 检查是否携带了token字段，若无则动态赋值
+
+    登录成功后会将后端返回的userInfo数据存储到vuex和storage中，其中包含了token信息。请求拦截器中从storage中获取，添加到headers中的Authorization字段。
+
+    ```js
+    service.interceptors.request.use((req) => {
+      // 判断是否携带jwt字段，若无则进行赋值，动态添加token
+      const headers = req.headers;
+      const token  = storage.getItem("userInfo")?.token;
+      if (!headers.Authorization) headers.Authorization = 'Bearer ' + token;
+      return req;
+    })
+    ```
 
 - 响应拦截
 
