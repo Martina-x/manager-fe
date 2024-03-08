@@ -49,7 +49,9 @@ import { reactive, ref } from 'vue';
 export default {
   name: 'User',
   setup() {
+    // 初始化用户表单对象
     const user = reactive({});
+    // 初始话用户列表数据
     const userList = ref([
       {
         "state": 1,
@@ -73,6 +75,7 @@ export default {
         "mobile": "17611020000"
       }
     ]);
+    // 定义动态表格-格式
     const columns = reactive([
       { label: '用户ID', prop: 'userId'},
       { label: '用户名', prop: 'userName' },
