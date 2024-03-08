@@ -258,7 +258,7 @@ export default {
   }
   ```
 
-  
+  但是要注意的是，在api文件中手动设置了mock同时修改了`config`配置，如果之后的接口不再手动设置`mock`，那么将一直保持这个手动修改的`mock`作为`config.mock`值决定发送请求的地址。
 
   最后也要将这个`index`文件进行挂载
 
