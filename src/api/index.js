@@ -15,14 +15,16 @@ export default {
   noticeCount() {
     return request({
       url: '/leave/count',
-      data: {}
+      data: {},
+      mock: true
     })
   },
   getMenuList(params) {
     return request({
       url: '/menu/list',
       method: 'post',
-      data: params
+      data: params,
+      mock: true
     })
   },
 }

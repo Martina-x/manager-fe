@@ -18,7 +18,7 @@ const routes = [
           title: '欢迎页'
         },
         path: '/welcome',
-        component: () => import('../views/Welcome.vue'),
+        component: () => import('@/views/Welcome.vue'),
       },
       {
         name: 'User',
@@ -26,17 +26,7 @@ const routes = [
           title: '用户管理'
         },
         path: 'user',
-        component: () => import('../views/Welcome.vue'),
-        children: [
-          {
-            name: 'Info',
-            meta: {
-              title: '信息统计'
-            },
-            path: 'info',
-            component: () => import('../views/Welcome.vue'),
-          }
-        ]
+        component: () => import('@/views/User.vue'),
       }
     ]
   },
