@@ -27,8 +27,8 @@ service.interceptors.request.use((req) => {
 })
 
 // 响应拦截
-service.interceptors.response.use(req => {
-  const { code, msg, data } = req.data;
+service.interceptors.response.use(res => {
+  const { code, msg, data } = res.data;
   if (code === 200) {
     // ElMessage.success(msg);
     return data; // 直接返回data即可，这样可以直接拿到数据，不需要在每个页面都调用then方法
