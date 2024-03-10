@@ -18,7 +18,7 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleQuery">查询</el-button>
-          <el-button @click="resetForm">重置</el-button>
+          <el-button @click="resetForm('userForm')">重置</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -50,7 +50,7 @@
         </el-form-item>
         <el-form-item label="邮箱" prop="userEmail">
           <el-input v-model="dialogForm.userEmail" placeholder="请输入用户邮箱">
-            <template #append>.com</template>
+            <template #append>@immoc.com</template>
           </el-input>
         </el-form-item>
         <el-form-item label="手机号" prop="mobile">
@@ -67,35 +67,24 @@
           </el-select>
         </el-form-item>
         <el-form-item label="系统角色" prop="roleList">
-          <el-select v-model="dialogForm.roleList" style="width: 140px" placeholder="请选择用户系统角色">
-            <el-option></el-option>
+          <el-select v-model="dialogForm.roleList" style="width: 100%" placeholder="请选择用户系统角色" multiple>
+            <el-option v-for="role in roleList" :key="role._id" :label="role.roleName" :value="role._id">
+            </el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="部门" prop="deptId">
           <el-cascader 
             v-model="dialogForm.deptId" 
-            :options="[
-              {
-                _id: 1,
-                deptName: 'ssss',
-                children: [
-                  {
-                    _id: 1,
-                    deptName: 'ssss'}
-                ]
-              }
-            ]" 
-            :props="{
-              checkStrictly: true,
-              value: '_id',
-              label: 'deptName'
-            }" clearable placeholder="请选择部门" style="width: 140px" />
+            :options="deptList" 
+            :props="{ checkStrictly: true, value: '_id', label: 'deptName' }" 
+            clearable 
+            placeholder="请选择所属部门" style="width: 100%" />
         </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button>取消</el-button>
-          <el-button type="primary">确定</el-button>
+          <el-button @click="handleClose">取消</el-button>
+          <el-button type="primary" @click="handleSubmit">确定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -104,7 +93,7 @@
 </template>
           
 <script>
-import { reactive, ref, onMounted, getCurrentInstance } from 'vue';
+import { reactive, ref, onMounted, getCurrentInstance, toRaw } from 'vue';
 
 export default {
   name: 'User',
@@ -171,6 +160,12 @@ export default {
     const dialogForm = reactive({
       state: 3
     })
+    // 所有角色列表
+    const roleList = ref([]);
+    // 部门列表
+    const deptList = ref([]);
+    // 定义用户操作行为
+    const action = ref('add')
     // 定义表单校验规则
     const rules = {
       userName: [
@@ -195,13 +190,14 @@ export default {
         }
       ],
       deptId: [
-        { required: true, message: '请输入用户所属部门', trigger: 'blur' },
-        {validator(value){console.log(value)}, trigger: 'blur'}
+        { required: true, message: '请输入用户所属部门', trigger: 'blur' }
       ]
     };
     // 初始化接口调用
     onMounted(() => {
       getUserList();
+      getRoleList();
+      getDeptList();
     })
     // 获取用户列表
     const getUserList = async() => {
@@ -219,8 +215,8 @@ export default {
       getUserList();
     }
     // 重置查询表单
-    const resetForm = () => {
-      proxy.$refs["userForm"].resetFields();
+    const resetForm = (form) => {
+      proxy.$refs[form].resetFields();
     }
     // 分页数据处理
     const handleCurrentChange = (current) => {
@@ -271,6 +267,38 @@ export default {
     const handleCreate = () => {
       showModal.value = true;
     }
+    // 获取角色列表
+    const getRoleList = async () => {
+      const list = await proxy.$api.getRoleList();
+      roleList.value = list;
+    }
+    // 获取部门列表
+    const getDeptList = async () => {
+      const list = await proxy.$api.getDeptList();
+      deptList.value = list; 
+    }
+    // 关闭弹窗
+    const handleClose = () => {
+      showModal.value = false;
+      resetForm("dialogFormRef");
+    }
+    // 提交用户
+    const handleSubmit = () => {
+      proxy.$refs.dialogFormRef.validate(async (valid) => {
+        if (valid) {
+          let params = toRaw(dialogForm);
+          params.action = action.value;
+          params.userEmail += '@immoc.com';
+          const res = await proxy.$api.userSubmit(params);
+          if (res) {
+            proxy.$message.success('用户创建成功');
+            showModal.value = false;
+            resetForm("dialogFormRef");
+            getUserList();
+          }
+        }
+      })
+    }
     return { 
       user, 
       userList, 
@@ -278,6 +306,8 @@ export default {
       pager,
       showModal,
       dialogForm,
+      roleList,
+      deptList,
       rules,
       getUserList, 
       resetForm, 
@@ -286,7 +316,9 @@ export default {
       handleDel,
       handleSelectionChange,
       handlePatchDel,
-      handleCreate
+      handleCreate,
+      handleClose,
+      handleSubmit
     }
   }
 }
