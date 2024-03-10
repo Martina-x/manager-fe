@@ -14,9 +14,8 @@ import { useRoute } from "vue-router";
 export default {
   name: 'BreadCrumb',
   setup() {
-    
+    const route = useRoute();
     const breadList = computed(() => {
-      const route = useRoute();
       return route.matched;
     });
     return { ArrowRight, breadList }
