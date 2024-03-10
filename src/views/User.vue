@@ -25,26 +25,22 @@
     <div class="base-table">
       <div class="action">
         <el-button type="primary">新增</el-button>
-        <el-button type="danger">批量删除</el-button>
+        <el-button type="danger" @click="handlePatchDel">批量删除</el-button>
       </div>
-      <el-table :data="userList">
+      <el-table :data="userList" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="35" />
-        <el-table-column v-for="item in columns" :prop="item.prop" :label="item.label" :width="item.width" />
+        <el-table-column v-for="item in columns" :prop="item.prop" :label="item.label" :width="item.width"
+          :formatter="item.formatter" />
         <el-table-column fixed="right" label="操作" width="155">
-          <template #default>
+          <template #default="scope">
             <el-button size="small">编辑</el-button>
-            <el-button type="danger" size="small">删除</el-button>
+            <el-button type="danger" size="small" @click="handleDel(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
       <div class="pagination">
-        <el-pagination 
-          background
-          layout="->, prev, pager, next" 
-          :total="parseInt(pager.total)"
-          :page-size="pager.pageSize"
-          @current-change="handleCurrentChange" 
-        />
+        <el-pagination background layout="->, prev, pager, next" :total="parseInt(pager.total)"
+          :page-size="pager.pageSize" @current-change="handleCurrentChange" />
       </div>
     </div>
   </div>
@@ -73,14 +69,46 @@ export default {
     });
     // 定义动态表格-格式
     const columns = reactive([
-      { label: '用户ID', prop: 'userId'},
-      { label: '用户名', prop: 'userName' },
-      { label: '用户邮箱', prop: 'userEmail' },
-      { label: '用户角色', prop: 'role' },
-      { label: '用户状态', prop: 'state' },
-      { label: '注册时间', prop: 'createTime' },
-      { label: '最后登录', prop: 'lastLoginTime' },
+      { 
+        label: '用户ID', 
+        prop: 'userId'
+      },
+      { 
+        label: '用户名', 
+        prop: 'userName' 
+      },
+      { 
+        label: '用户邮箱', 
+        prop: 'userEmail' 
+      },
+      { 
+        label: '用户角色', 
+        prop: 'role',
+        formatter: (row, col, val) => {
+          return { 
+            0: '管理员', 
+            1: '普通用户' 
+          }[val];
+        } 
+      },
+      { 
+        label: '用户状态', 
+        prop: 'state', 
+        formatter: (row, col, val) => {
+          return { 
+            1: '在职', 
+            2: '离职', 
+            3: '试用期' 
+          }[val];
+        } 
+      },
+      { 
+        label: '注册时间', prop: 'createTime' },
+      { 
+        label: '最后登录', prop: 'lastLoginTime' },
     ])
+    // 初始话选中列表
+    let checkedUserIds = ref([]);
     // 初始化接口调用
     onMounted(() => {
       getUserList();
@@ -109,6 +137,46 @@ export default {
       pager.pageNum = current;
       getUserList();
     }
+    // 用户单个删除
+    const handleDel = async (row) => {
+      try {
+        const res = await proxy.$api.userDel({userIds: [row.userId]});
+        if (res.nModified > 0) {
+          proxy.$message.success('删除成功');
+          getUserList();
+        }else {
+          proxy.$message.error('删除失败');
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    // 多选事件
+    const handleSelectionChange = (list) => {
+      let arr = [];
+      list.map(item => {
+        arr.push(item.userId);
+      });
+      checkedUserIds.value = arr;
+    }
+    // 批量删除
+    const handlePatchDel = async () => {
+      try {
+        if (checkedUserIds.value.length == 0) {
+          proxy.$message.error('请选择要删除的用户');
+          return;
+        }
+        const res = await proxy.$api.userDel({ userIds: checkedUserIds.value });
+        if (res.nModified > 0) {
+          proxy.$message.success('删除成功');
+          getUserList();
+        } else {
+          proxy.$message.error('删除失败');
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
     return { 
       user, 
       userList, 
@@ -116,9 +184,11 @@ export default {
       pager,
       getUserList, 
       resetForm, 
-      //userForm, 
       handleQuery,
-      handleCurrentChange
+      handleCurrentChange,
+      handleDel,
+      handleSelectionChange,
+      handlePatchDel
     }
   }
 }
