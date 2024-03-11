@@ -33,7 +33,7 @@
           :formatter="item.formatter" />
         <el-table-column fixed="right" label="操作" width="155">
           <template #default="scope">
-            <el-button size="small">编辑</el-button>
+            <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
             <el-button type="danger" size="small" @click="handleDel(scope.row)">删除</el-button>
           </template>
         </el-table-column>
@@ -43,13 +43,14 @@
           :page-size="pager.pageSize" @current-change="handleCurrentChange" />
       </div>
     </div>
-    <el-dialog v-model="showModal" title="新增用户">
+    <el-dialog v-model="showModal" title="新增用户" :close-on-click-modal="false" :close-on-press-escape=false
+      @close="handleClose">
       <el-form :model="dialogForm" label-width="100px" :rules="rules" ref="dialogFormRef">
         <el-form-item prop="userName" label="用户名">
-          <el-input v-model="dialogForm.userName" />
+          <el-input v-model="dialogForm.userName" :disabled="action == 'edit'" />
         </el-form-item>
         <el-form-item label="邮箱" prop="userEmail">
-          <el-input v-model="dialogForm.userEmail" placeholder="请输入用户邮箱">
+          <el-input v-model="dialogForm.userEmail" placeholder="请输入用户邮箱" :disabled="action == 'edit'">
             <template #append>@immoc.com</template>
           </el-input>
         </el-form-item>
@@ -73,25 +74,22 @@
           </el-select>
         </el-form-item>
         <el-form-item label="部门" prop="deptId">
-          <el-cascader 
-            v-model="dialogForm.deptId" 
-            :options="deptList" 
-            :props="{ checkStrictly: true, value: '_id', label: 'deptName' }" 
-            clearable 
-            placeholder="请选择所属部门" style="width: 100%" />
+          <el-cascader v-model="dialogForm.deptId" :options="deptList"
+            :props="{ checkStrictly: true, value: '_id', label: 'deptName' }" clearable placeholder="请选择所属部门"
+            style="width: 100%" />
         </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="handleClose">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">确定</el-button>
+          <el-button @click="handleClose">取 消</el-button>
+          <el-button type="primary" @click="handleSubmit">确 定</el-button>
         </div>
       </template>
     </el-dialog>
   </div>
 
 </template>
-          
+
 <script>
 import { reactive, ref, onMounted, getCurrentInstance, toRaw } from 'vue';
 
@@ -114,43 +112,45 @@ export default {
     });
     // 定义动态表格-格式
     const columns = reactive([
-      { 
-        label: '用户ID', 
+      {
+        label: '用户ID',
         prop: 'userId'
       },
-      { 
-        label: '用户名', 
-        prop: 'userName' 
+      {
+        label: '用户名',
+        prop: 'userName'
       },
-      { 
-        label: '用户邮箱', 
-        prop: 'userEmail' 
+      {
+        label: '用户邮箱',
+        prop: 'userEmail'
       },
-      { 
-        label: '用户角色', 
+      {
+        label: '用户角色',
         prop: 'role',
         formatter: (row, col, val) => {
-          return { 
-            0: '管理员', 
-            1: '普通用户' 
+          return {
+            0: '管理员',
+            1: '普通用户'
           }[val];
-        } 
+        }
       },
-      { 
-        label: '用户状态', 
-        prop: 'state', 
+      {
+        label: '用户状态',
+        prop: 'state',
         formatter: (row, col, val) => {
-          return { 
-            1: '在职', 
-            2: '离职', 
-            3: '试用期' 
+          return {
+            1: '在职',
+            2: '离职',
+            3: '试用期'
           }[val];
-        } 
+        }
       },
-      { 
-        label: '注册时间', prop: 'createTime' },
-      { 
-        label: '最后登录', prop: 'lastLoginTime' },
+      {
+        label: '注册时间', prop: 'createTime'
+      },
+      {
+        label: '最后登录', prop: 'lastLoginTime'
+      },
     ])
     // 初始化选中列表
     let checkedUserIds = ref([]);
@@ -169,7 +169,7 @@ export default {
     // 定义表单校验规则
     const rules = {
       userName: [
-        { required: true, message:'请输入用户名称', trigger: 'blur'}
+        { required: true, message: '请输入用户名称', trigger: 'blur' }
       ],
       userEmail: [
         { required: true, message: '请输入用户邮箱', trigger: 'blur' }
@@ -185,8 +185,8 @@ export default {
             } else {
               callback();
             }
-          }, 
-          trigger: 'blur' 
+          },
+          trigger: 'blur'
         }
       ],
       deptId: [
@@ -200,7 +200,7 @@ export default {
       getDeptList();
     })
     // 获取用户列表
-    const getUserList = async() => {
+    const getUserList = async () => {
       const params = { ...pager, ...user };
       try {
         const { page, list } = await proxy.$api.getUserList(params);
@@ -226,11 +226,11 @@ export default {
     // 用户单个删除
     const handleDel = async (row) => {
       try {
-        const res = await proxy.$api.userDel({userIds: [row.userId]});
+        const res = await proxy.$api.userDel({ userIds: [row.userId] });
         if (res.nModified > 0) {
           proxy.$message.success('删除成功');
           getUserList();
-        }else {
+        } else {
           proxy.$message.error('删除失败');
         }
       } catch (error) {
@@ -265,6 +265,7 @@ export default {
     }
     // 用户新增
     const handleCreate = () => {
+      action.value = "add";
       showModal.value = true;
     }
     // 获取角色列表
@@ -275,7 +276,7 @@ export default {
     // 获取部门列表
     const getDeptList = async () => {
       const list = await proxy.$api.getDeptList();
-      deptList.value = list; 
+      deptList.value = list;
     }
     // 关闭弹窗
     const handleClose = () => {
@@ -292,25 +293,34 @@ export default {
           const res = await proxy.$api.userSubmit(params);
           if (res) {
             proxy.$message.success('用户创建成功');
-            showModal.value = false;
-            resetForm("dialogFormRef");
+            handleClose();
             getUserList();
           }
         }
       })
     }
-    return { 
-      user, 
-      userList, 
-      columns, 
+    // 用户编辑
+    const handleEdit = (row) => {
+      action.value = 'edit';
+      showModal.value = true;
+      // 必须要在弹框弹出来之后，有了初始的状态再去赋值，否则把赋了值的时候当成初始状态来reset
+      proxy.$nextTick(() => {
+        Object.assign(dialogForm, row);
+      })
+    }
+    return {
+      user,
+      userList,
+      columns,
       pager,
       showModal,
       dialogForm,
       roleList,
       deptList,
       rules,
-      getUserList, 
-      resetForm, 
+      action,
+      getUserList,
+      resetForm,
       handleQuery,
       handleCurrentChange,
       handleDel,
@@ -318,9 +328,9 @@ export default {
       handlePatchDel,
       handleCreate,
       handleClose,
-      handleSubmit
+      handleSubmit,
+      handleEdit
     }
   }
 }
 </script>
-          
