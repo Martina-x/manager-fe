@@ -237,7 +237,7 @@ export default {
     const handleDel = async (row) => {
       try {
         const res = await proxy.$api.userDel({ userIds: [row.userId] });
-        if (res.nModified > 0) {
+        if (res.modifiedCount > 0) {
           proxy.$message.success('删除成功');
           getUserList();
         } else {
@@ -263,7 +263,8 @@ export default {
           return;
         }
         const res = await proxy.$api.userDel({ userIds: checkedUserIds.value });
-        if (res.nModified > 0) {
+        console.log(res)
+        if (res.modifiedCount > 0) {
           proxy.$message.success('删除成功');
           getUserList();
         } else {
