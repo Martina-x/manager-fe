@@ -92,7 +92,7 @@
 
 <script>
 import { reactive, ref, onMounted, getCurrentInstance, toRaw } from 'vue';
-
+import utils from '@/utils/utils';
 export default {
   name: 'User',
   setup() {
@@ -101,7 +101,7 @@ export default {
     const { proxy, ctx } = instance;
     // 初始化用户表单对象
     const user = reactive({
-      state: 3
+      state: 1
     });
     // 初始化用户列表数据
     const userList = ref([]);
@@ -146,10 +146,20 @@ export default {
         }
       },
       {
-        label: '注册时间', prop: 'createTime'
+        label: '注册时间', 
+        prop: 'createTime',
+        width: 180,
+        formatter: (row, col, val) => {
+          return utils.formatDate(new Date(val))
+        }
       },
       {
-        label: '最后登录', prop: 'lastLoginTime'
+        label: '最后登录', 
+        prop: 'lastLoginTime',
+        width: 180,
+        formatter: (row, col, val) => {
+          return utils.formatDate(new Date(val))
+        }
       },
     ])
     // 初始化选中列表
