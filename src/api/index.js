@@ -9,20 +9,62 @@ export default {
     return request({
       url: '/users/login',
       method: 'post',
-      data: params
+      data: params,
+      mock: false
     })
   },
   noticeCount() {
     return request({
       url: '/leave/count',
-      data: {}
+      data: {},
+      mock: true
     })
   },
   getMenuList(params) {
     return request({
       url: '/menu/list',
       method: 'post',
-      data: params
+      data: params,
+      mock: true
     })
   },
+  getUserList(params) {
+    return request({
+      url: '/users/list',
+      data: params,
+      mock: false
+    })
+  },
+  userDel(params) {
+    return request({
+      url: '/users/delete',
+      method: 'post',
+      data: params,
+      mock: false
+    })
+  },
+  getRoleList() {
+    return request({
+      url: '/roles/allList',
+      method: 'get',
+      data: {},
+      mock: true
+    })
+  },
+  getDeptList() {
+    return request({
+      url: '/dept/list',
+      method: 'get',
+      data: {},
+      mock: true
+    })
+  },
+  userSubmit(params) {
+    return request({
+      url: '/users/operate',
+      method: 'post',
+      data: params,
+      mock: false
+    })
+  }
 }

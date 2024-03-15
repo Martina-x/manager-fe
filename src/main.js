@@ -18,7 +18,7 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 
 app
 .use(router)
-.use(ElementPlus)
+.use(ElementPlus, { size: 'small', zIndex: 3000 })
 .use(store)
 .mount('#app')
 

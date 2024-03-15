@@ -27,8 +27,8 @@ service.interceptors.request.use((req) => {
 })
 
 // 响应拦截
-service.interceptors.response.use(req => {
-  const { code, msg, data } = req.data;
+service.interceptors.response.use(res => {
+  const { code, msg, data } = res.data;
   if (code === 200) {
     // ElMessage.success(msg);
     return data; // 直接返回data即可，这样可以直接拿到数据，不需要在每个页面都调用then方法
@@ -57,14 +57,15 @@ function request(options) {
   if (options.method.toLowerCase() === 'get') {
     options.params = options.data; // get请求的参数名是params，post请求的参数名是data，但是在调用request的时候统一传入data字段，但是这里也还是要做一个转换，减少前端开发成本
   }
+  let isMock = config.mock;
   if (typeof options.mock != 'undefined') {
-    config.mock = options.mock;
+    isMock = options.mock;
   }
   // 接口地址一定不能搞错，特别要确保生产环境下baseURL是否用的是线上的baseApi，而不是mockApi，无论mock是否为true
   if (config.env === 'prod') {
     service.defaults.baseURL = config.baseApi; // 只要是生产环境都要指向baseApi
   }else {
-    service.defaults.baseURL = config.mock ? config.mockApi : config.baseApi;
+    service.defaults.baseURL = isMock ? config.mockApi : config.baseApi;
   }
   return service(options); // 最终调用的是service，然后将options传入
 }

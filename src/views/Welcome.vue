@@ -18,6 +18,7 @@
   display: flex;
   justify-content: space-around;
   align-items: center;
+  background: #fff;
   .content {
     position: relative;
     .sub-title {
