@@ -303,7 +303,8 @@ export default {
           params.userEmail += '@immoc.com';
           const res = await proxy.$api.userSubmit(params);
           if (res) {
-            proxy.$message.success('用户创建成功');
+            const msg = action.value === 'edit' ? '用户更新成功' : '用户创建成功';
+            proxy.$message.success(msg);
             handleClose();
             getUserList();
           }
