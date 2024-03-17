@@ -28,12 +28,13 @@
           <template #default="scope">
             <el-button type="primary" @click="handleAdd(2, scope.row)">新增</el-button>
             <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button type="danger" size="small" @click="handleDel(scope.row)">删除</el-button>
+            <el-button type="danger" size="small" @click="handleDel(scope.row._id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
     </div>
-    <el-dialog v-model="showModal" title="创建菜单" :close-on-click-modal="false" :close-on-press-escape=false>
+    <el-dialog v-model="showModal" title="创建菜单" :close-on-click-modal="false" :close-on-press-escape=false
+      @close="handleClose">
       <el-form :model="dialogForm" label-width="100px" :rules="rules" ref="dialogFormRef">
         <el-form-item label="父级菜单" prop="parentId">
           <el-cascader v-model="dialogForm.parentId" :options="menuList"
@@ -185,13 +186,20 @@ export default {
       }
     },
 
-    handleEdit() {
-
+    // 编辑菜单
+    handleEdit(row) {
+      this.action = 'edit';
+      this.showModal = true;
+      this.$nextTick(() => {
+        Object.assign(this.dialogForm, row);
+      })
     },
 
-
-    handleDel(row) {
-
+    // 删除菜单
+    async handleDel(_id) {
+      await this.$api.menuSubmit({ _id, action: 'delete' });
+      this.$message.success('删除成功');
+      this.getMenuList();
     },
 
     // 弹框关闭
@@ -207,9 +215,8 @@ export default {
           let { action, dialogForm } = this;
           let params = { ...dialogForm, action };
           let res = await this.$api.menuSubmit(params);
-          this.showModal = false;
           this.$message.success('操作成功');
-          this.handleReset('dialogFormRef');
+          this.handleClose();
           this.getMenuList();
         }
       })
