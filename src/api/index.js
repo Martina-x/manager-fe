@@ -72,7 +72,7 @@ export default {
       url: '/menu/operate',
       method: 'post',
       data: params,
-      mock: true
+      mock: false
     })
   }
 }
