@@ -146,7 +146,7 @@ export default {
         }
       },
       {
-        label: '注册时间', 
+        label: '注册时间',
         prop: 'createTime',
         width: 180,
         formatter: (row, col, val) => {
@@ -154,7 +154,7 @@ export default {
         }
       },
       {
-        label: '最后登录', 
+        label: '最后登录',
         prop: 'lastLoginTime',
         width: 180,
         formatter: (row, col, val) => {
@@ -206,7 +206,7 @@ export default {
     // 初始化接口调用
     onMounted(() => {
       getUserList();
-      getRoleList();
+      getRoleAllList();
       getDeptList();
     })
     // 获取用户列表
@@ -280,8 +280,8 @@ export default {
       showModal.value = true;
     }
     // 获取角色列表
-    const getRoleList = async () => {
-      const list = await proxy.$api.getRoleList();
+    const getRoleAllList = async () => {
+      const list = await proxy.$api.getRoleAllList();
       roleList.value = list;
     }
     // 获取部门列表

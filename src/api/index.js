@@ -42,11 +42,18 @@ export default {
       mock: false
     })
   },
-  getRoleList() {
+  getRoleAllList() {
     return request({
       url: '/roles/allList',
       method: 'get',
       data: {},
+      mock: true
+    })
+  },
+  getRoleList(params) {
+    return request({
+      url: '/roles/list',
+      data: params,
       mock: true
     })
   },
