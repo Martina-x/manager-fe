@@ -23,7 +23,6 @@ export default {
   getMenuList(params) {
     return request({
       url: '/menu/list',
-      method: 'post',
       data: params,
       mock: false
     })
