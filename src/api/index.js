@@ -25,7 +25,7 @@ export default {
       url: '/menu/list',
       method: 'post',
       data: params,
-      mock: true
+      mock: false
     })
   },
   getUserList(params) {

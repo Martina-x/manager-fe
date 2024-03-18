@@ -144,13 +144,14 @@ export default {
       ],
       showModal: false,
       dialogForm: {
+        parentId: [null],
         menuType: 1,
         menuState: 1
       },
       rules: {
         menuName: [
           { required: true, message: '请输入菜单名称', trigger: 'blur' },
-          { min: 3, max: 8, message: '长度在3到8个字符', trigger: 'blur' }
+          { min: 2, max: 8, message: '长度在2到8个字符', trigger: 'blur' }
         ]
       },
       action: ''
