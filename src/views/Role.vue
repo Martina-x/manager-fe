@@ -108,9 +108,17 @@ export default {
             return utils.formatDate(new Date(val))
           }
         },
+        {
+          label: '更新时间',
+          prop: 'updateTime',
+          formatter: (row, col, val) => {
+            return utils.formatDate(new Date(val))
+          }
+        }
       ],
       pager: {
-        pageSize: 10
+        pageSize: 10,
+        pageNum: 1
       },
       showModal: false,
       dialogForm: {},
@@ -167,9 +175,10 @@ export default {
     // 角色编辑
     handleEdit(row) {
       this.showModal = true;
-      this.action = 'edit ';
+      this.action = 'edit';
       this.$nextTick(() => {
-        Object.assign(this.dialogForm, row)
+        Object.assign(this.dialogForm, { _id: row._id, roleName: row.roleName, remark: row.remark });
+
       })
     },
 
@@ -260,7 +269,10 @@ export default {
       this.actionMap = actionMap;
     },
 
-    handleCurrentChange() { },
+    handleCurrentChange(current) {
+      this.pager.pageNum = current;
+      this.getRoleList();
+    },
   }
 }
 </script>
