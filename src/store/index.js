@@ -7,7 +7,7 @@ import storage from "../utils/storage";
 import mutations from "./mutations";
 
 const state = {
-  userInfo: "" || storage.getItem("userInfo"),
+  userInfo: storage.getItem("userInfo") || {},
 }
 
 export default createStore({
