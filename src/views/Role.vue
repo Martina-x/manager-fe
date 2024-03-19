@@ -87,6 +87,7 @@ export default {
         {
           label: '权限列表',
           prop: 'permissionList',
+          width: 200,
           formatter: (row, col, val) => {
             let list = val.halfCheckedKeys || [];
             // let names = list.map(key => {
@@ -94,9 +95,10 @@ export default {
             // });
             let names = [];
             list.map(key => {
-              if (key && this.actionMap[key]) {
-                names.push(this.actionMap[key]);
-              }
+              const name = this.actionMap[key]
+              if (key && name) {
+                names.push(name);
+              } 
             });
             return names.join(', ');
           }
@@ -178,7 +180,6 @@ export default {
       this.action = 'edit';
       this.$nextTick(() => {
         Object.assign(this.dialogForm, { _id: row._id, roleName: row.roleName, remark: row.remark });
-
       })
     },
 

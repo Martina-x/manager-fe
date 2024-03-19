@@ -659,6 +659,14 @@ export default router;
 
 # 角色管理
 
+## RABC
+
+Role-Base-Access-Control
+
+**用户**分配角色 -> **角色**分配权限 -> **权限**对应菜单、按钮
+
+用户登录之后，根据对应角色，拉取用户的所有权限列表，对菜单、按钮进行动态渲染
+
 ## 权限设置
 
 在`el-tree`组件中，与复选框选中情况相关的几个属性`checkedNodes`、`checkedKeys`、`halfCheckedNodes`、`halfCheckedKeys `中，`halfCheckedKeys`。其中，当父菜单的所有子菜单被选中后，父菜单会认为是`checkedKeys`的一员。
@@ -732,13 +740,11 @@ columns: [
     prop: 'permissionList',
     formatter: (row, col, val) => {
       let list = val.halfCheckedKeys || [];
-      // let names = list.map(key => {
-      //   if (key) return this.actionMap[key];
-      // });
       let names = [];
       list.map(key => {
-        if (key && this.actionMap[key]) {
-          names.push(this.actionMap[key]);
+        const name = this.actionMap[key]
+        if (key && name) {
+          names.push(name);
         } 
       });
       return names.join(', ');
@@ -746,8 +752,6 @@ columns: [
   },
 ]
 ```
-
-> 注释部分是原写法，但是halfCheckedKeys中非最后一级的菜单不需要渲染到表格上（比如一级菜单“系统管理”），我们只需要渲染按钮的上一级菜单即可（比如“系统管理”下的“用户管理”）
 
 ```js
 // 菜单列表初始化
