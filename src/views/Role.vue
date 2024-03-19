@@ -21,7 +21,7 @@
         <el-table-column fixed="right" label="操作" width="220">
           <template #default="scope">
             <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button type="primary" size="small">设置权限</el-button>
+            <el-button type="primary" size="small" @click="handlePermissionOpen(scope.row)">设置权限</el-button>
             <el-button type="danger" size="small" @click="handleDel(scope.row._id)">删除</el-button>
           </template>
         </el-table-column>
@@ -48,8 +48,22 @@
         </div>
       </template>
     </el-dialog>
+    <el-dialog v-model="showPermissionModal" title="权限设置" :close-on-click-modal="false" :close-on-press-escape=false>
+      <el-form label-width="100px">
+        <el-form-item label="角色名称">{{ curRoleName }}</el-form-item>
+        <el-form-item label="选择权限">
+          <el-tree ref="treeRef" style="max-width: 600px" :data="menuList" show-checkbox node-key="_id"
+            :props="{ label: 'menuName' }" :default-expand-all="true" :default-checked-keys="curCheckedList" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="showPermissionModal = false">取 消</el-button>
+          <el-button type="primary" @click="handlePerssionSubmit">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
-
 </template>
 
 <script>
@@ -90,14 +104,20 @@ export default {
       rules: {
         roleName: { required: true, message: '请输入角色名称', trigger: 'blur' }
       },
-      action: ''
+      action: '',
+      showPermissionModal: false,
+      menuList: [],
+      curRoleId: '',
+      curRoleName: '',
+      curCheckedList: []
     }
   },
   mounted() {
     this.getRoleList();
+    this.getMenuList();
   },
   methods: {
-    // 菜单列表初始化
+    // 角色列表初始化
     async getRoleList() {
       try {
         let { list, page } = await this.$api.getRoleList(this.queryForm);
@@ -105,6 +125,16 @@ export default {
         this.pager.total = page.total
       } catch (error) {
         throw new Error(error);
+      }
+    },
+
+    // 菜单列表初始化
+    async getMenuList() {
+      try {
+        const list = await this.$api.getMenuList();
+        this.menuList = list;
+      } catch (error) {
+        console.error(error);
       }
     },
 
@@ -155,8 +185,50 @@ export default {
         this.handleClose();
         this.getRoleList();
       })
+    },
 
-    }
+    // 设置权限
+    handlePermissionOpen(row) {
+      this.showPermissionModal = true;
+      this.curRoleId = row._id
+      this.curRoleName = row.roleName;
+      let { checkedKeys } = row.permissionList;
+      setTimeout(() => {
+        this.$refs.treeRef.setCheckedKeys(checkedKeys);
+      });
+
+    },
+
+    // 提交权限
+    async handlePerssionSubmit() {
+      // 获取选中节点
+      let nodes = this.$refs.treeRef.getCheckedNodes();
+      // 获取半选中节点id
+      let halfKeys = this.$refs.treeRef.getHalfCheckedKeys();
+      let checkedKeys = []; // 过滤后的选中节点id
+      let parentKeys = []; // 过滤出来的父菜单节点id
+      // 将选中结点中的父菜单项过滤出来，区分菜单和按钮
+      nodes.map(node => {
+        if (!node.children) {
+          checkedKeys.push(node._id);
+        } else {
+          parentKeys.push(node._id);
+        }
+      });
+      let params = {
+        _id: this.curRoleId,
+        permissionList: {
+          checkedKeys,
+          halfCheckedKeys: parentKeys.concat(halfKeys)
+        }
+      };
+      await this.$api.updatePermission(params);
+      this.showPermissionModal = false;
+      this.$message.success('设置成功');
+      this.getRoleList();
+    },
+
+    handleCurrentChange() { },
   }
 }
 </script>

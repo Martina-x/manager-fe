@@ -656,3 +656,68 @@ export default router;
 >
 > 1. 关于`<el-breadcrumb :separator-icon="ArrowRight">`，官网给出的示例用的是组合式API，原本打算用选项式来着，但是无法获取到这个icon，控制台提醒`Property "ArrowRight" was accessed during render but is not defined on instance. `
 > 2. `const route = useRoute()`一开始是定义在`computed`内部的，但是如果从`/welcome`手动输入`/user/info`并跳转会提示报错`TypeError: Cannot read properties of undefined (reading 'matched')`
+
+# 角色管理
+
+## 权限设置
+
+在`el-tree`组件中，与复选框选中情况相关的几个属性`checkedNodes`、`checkedKeys`、`halfCheckedNodes`、`halfCheckedKeys `中，`halfCheckedKeys`。其中，当父菜单的所有子菜单被选中后，父菜单会认为是`checkedKeys`的一员。
+
+但是在实际开发中，我们需要通过请求接口，获取角色权限列表`permissionList`中的`checkedKeys`，从而在打开某个角色的权限设置面板时自动勾选对应的权限。
+
+对于请求接口获取的`checkedKeys`，我们可以直接通过调用Tree组件的`setCheckedKeys`方法设置目前选中的节点：
+
+```js
+handlePermissionOpen(row) {
+  let { checkedKeys, halfCheckedKeys } = row.permissionList;
+  this.$refs.treeRef.setCheckedKeys(checkedKeys)
+},
+```
+
+需要注意的是，当直接执行上述代码时，第一次打开弹框，会报错`Uncaught TypeError: Cannot read properties of undefined (reading 'setCheckedKeys')`，第二次无报错并且可以正常选中结点。分析原因是还未来得及获取曲柄`treeRef`。
+
+<img src="C:/Users/10175/AppData/Roaming/Typora/typora-user-images/image-20240319175933400.png" alt="image-20240319175933400" style="zoom:50%;" />
+
+所以添加延时操作，修改如下：
+
+```js
+setTimeout(() => {
+  this.$refs.treeRef.setCheckedKeys(checkedKeys);
+});
+```
+
+当提交权限修改时，携带参数如下：
+
+<img src="https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240319183407489.png" alt="image-20240319183407489" style="zoom:37%;" />
+
+其中`_id`为打开权限弹框时保存好的`curRoleId`，而需要注意的是，参数`permissionList`中的`checkedKeys`和`halfCheckedKeys`并不是直接通过Tree组件的方法获得的，需要手动进行过滤操作。
+
+因为Tree组件默认将所有子菜单都被选中的父菜单也视作`checkedKeys`，然后在项目中，如果我们新增了子菜单项且并未设置权限，那么`el-tree`会根据原始的`checkedKeys`将其也自动勾选，这是错误的。所以我们要对组件自身的`checkedKeys`中的父菜单过滤出来，将其视为半选中状态，使得`checkedKeys`只包含"新增"、“批量删除”等按钮，其余半选中父菜单保存在`halfCheckedKeys`中。
+
+```js
+async handlePerssionSubmit() {
+  // 获取选中节点
+  let nodes = this.$refs.treeRef.getCheckedNodes();
+  // 获取半选中节点id
+  let halfKeys = this.$refs.treeRef.getHalfCheckedKeys();
+  let checkedKeys = []; // 过滤后的选中节点id
+  let parentKeys = []; // 过滤出来的父菜单节点id
+  // 将选中结点中的父菜单项过滤出来，区分菜单和按钮
+  nodes.map(node => {
+    if (!node.children) {
+      checkedKeys.push(node._id);
+    } else {
+      parentKeys.push(node._id);
+    }
+  });
+  let params = {
+    _id: this.curRoleId,
+    permissionList: {
+      checkedKeys,
+      halfCheckedKeys: parentKeys.concat(halfKeys)
+    }
+  };
+  await this.$api.updatePermission(params);
+},
+```
+
