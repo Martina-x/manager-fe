@@ -47,14 +47,14 @@ export default {
       url: '/roles/allList',
       method: 'get',
       data: {},
-      mock: true
+      mock: false
     })
   },
   getRoleList(params) {
     return request({
       url: '/roles/list',
       data: params,
-      mock: true
+      mock: false
     })
   },
   getDeptList() {
