@@ -86,7 +86,20 @@ export default {
         },
         {
           label: '权限列表',
-          prop: 'permissionList'
+          prop: 'permissionList',
+          formatter: (row, col, val) => {
+            let list = val.halfCheckedKeys || [];
+            // let names = list.map(key => {
+            //   if (key) return this.actionMap[key];
+            // });
+            let names = [];
+            list.map(key => {
+              if (key && this.actionMap[key]) {
+                names.push(this.actionMap[key]);
+              } 
+            });
+            return names.join(', ');
+          }
         },
         {
           label: '创建时间',
@@ -109,7 +122,8 @@ export default {
       menuList: [],
       curRoleId: '',
       curRoleName: '',
-      curCheckedList: []
+      curCheckedList: [],
+      actionMap: {}
     }
   },
   mounted() {
@@ -133,6 +147,7 @@ export default {
       try {
         const list = await this.$api.getMenuList();
         this.menuList = list;
+        this.getActionMap(list); // 获取菜单名称映射
       } catch (error) {
         console.error(error);
       }
@@ -226,6 +241,23 @@ export default {
       this.showPermissionModal = false;
       this.$message.success('设置成功');
       this.getRoleList();
+    },
+
+    getActionMap(list) {
+      let actionMap = {};
+      const deep = (arr) => {
+        while (arr.length) {
+          const item = arr.pop();
+          if (item.children && item.action) {    // 子菜单为操作按钮
+            actionMap[item._id] = item.menuName;
+          }
+          if (item.children && !item.action) {   // 还没有到最后一级，递归
+            deep(item.children);
+          }
+        }
+      }
+      deep(JSON.parse(JSON.stringify(list)));
+      this.actionMap = actionMap;
     },
 
     handleCurrentChange() { },

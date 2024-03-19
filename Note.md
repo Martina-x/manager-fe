@@ -721,3 +721,57 @@ async handlePerssionSubmit() {
 },
 ```
 
+## 权限列表递归处理
+
+场景是根据角色的`halfCheckedKeys`在表格中展示按钮的父级菜单，同上文“权限设置”中一样用到了递归的方法。
+
+```js
+columns: [
+  {
+    label: '权限列表',
+    prop: 'permissionList',
+    formatter: (row, col, val) => {
+      let list = val.halfCheckedKeys || [];
+      // let names = list.map(key => {
+      //   if (key) return this.actionMap[key];
+      // });
+      let names = [];
+      list.map(key => {
+        if (key && this.actionMap[key]) {
+          names.push(this.actionMap[key]);
+        } 
+      });
+      return names.join(', ');
+    }
+  },
+]
+```
+
+> 注释部分是原写法，但是halfCheckedKeys中非最后一级的菜单不需要渲染到表格上（比如一级菜单“系统管理”），我们只需要渲染按钮的上一级菜单即可（比如“系统管理”下的“用户管理”）
+
+```js
+// 菜单列表初始化
+async getMenuList() {
+  const list = await this.$api.getMenuList();
+  this.getActionMap(list); // 获取菜单名称映射
+},
+  
+// 生成菜单映射
+getActionMap(list) {
+  let actionMap = {};
+  const deep = (arr) => {
+    while (arr.length) {
+      const item = arr.pop();
+      if (item.children && item.action) {    // 子菜单为操作按钮
+        actionMap[item._id] = item.menuName;
+      }
+      if (item.children && !item.action) {   // 还没有到最后一级，递归
+        deep(item.children);
+      }
+    }
+  }
+  deep(JSON.parse(JSON.stringify(list))); // 避免污染list
+  this.actionMap = actionMap;
+}
+```
+
