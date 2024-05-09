@@ -75,9 +75,7 @@ export default {
   name: 'Dept',
   data() {
     return {
-      queryForm: {
-        deptName: ""
-      },
+      queryForm: {},
       columns:[
         {
           label: '部门名称',
@@ -110,7 +108,9 @@ export default {
       },
       dialogVisible: false,
       action: "",
-      dialogForm: [],
+      dialogForm: {
+        parentId: [null]
+      },
       user: {
         userId: "",
         userName: "",
@@ -135,7 +135,7 @@ export default {
   },
   methods: {
     async getDeptList() {
-      const list = await this.$api.getDeptList({...this.queryForm, ...this.pager});
+      const list = await this.$api.getDeptList(this.queryForm);
       this.deptList = list;
     },
     async getAllUserList() {
@@ -180,11 +180,10 @@ export default {
           let params = {...this.dialogForm, action: this.action};
           delete params.user;
           let res = await this.$api.deptSubmit(params);
-          if(res) {
-            this.$message.success('操作成功');
-            this.dialogVisible = false;
-            this.getDeptList();
-          }
+          this.$message.success('操作成功');
+          this.dialogVisible = false;
+          this.getDeptList();
+          
         }
       })
     }

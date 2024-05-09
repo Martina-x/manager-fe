@@ -38,7 +38,7 @@ export default {
     return request({
       url: '/users/all/list',
       data: {},
-      mock: true
+      mock: false
     })
   },
   userDel(params) {
@@ -64,12 +64,12 @@ export default {
       mock: false
     })
   },
-  getDeptList() {
+  getDeptList(params) {
     return request({
       url: '/dept/list',
       method: 'get',
-      data: {},
-      mock: true
+      data: params,
+      mock: false
     })
   },
   deptSubmit(params) {
@@ -77,7 +77,7 @@ export default {
       url: '/dept/operate',
       method: 'post',
       data: params,
-      mock: true
+      mock: false
     })
   },
   userSubmit(params) {
