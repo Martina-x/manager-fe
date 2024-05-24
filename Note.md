@@ -867,3 +867,46 @@ app.directive('has', {
 在自定义指令中，冒号后跟着的是参数`arg`，等号后跟着的是绑定值`value`，都是`binding`中的字段。以`v-has:add="'user-create'"`为例，`add`是参数，`user-create`为绑定值，并且需要注意的是如果绑定的值为一个字符串，那么必须像这里`'user-create'`，如果直接`"user-create"`，那么会把`user-create`判断为一个变量。
 
 在移除使用自定义指令的dom元素时，之所以通过`setTimeout`，是因为这些逻辑是在`beforeMount`周期完成的，此时节点还在vdom节点中，还没有渲染到真正的dom中，无法直接删除。所以通过`setTimeout`添加一个宏任务，放在堆栈中，下次轮询的时候再来删除dom元素。
+
+## 导航守卫
+
+添加前置守卫，如果路径不存在则跳转到404页面
+
+```js
+// router/index.js
+// 导航守卫
+router.beforeEach((to, from, next) => {
+  if (router.hasRoute(to.name)) {
+    document.title = to.meta.title;
+    next();
+  }else {
+    next('/404');
+  }
+})
+```
+
+> 另一种判断的方式：
+>
+> ```js
+> // 判断当前地址是否可以访问
+> function checkPermission(path) {
+>   let hasPermission = router.getRoutes().filter(route => route.path == path).length;
+>   if (hasPermission) {
+>     return true;
+>   } else {
+>     return false;
+>   }
+> }
+> 
+> // 导航守卫
+> router.beforeEach((to, from, next) => {
+>   if (checkPermission(to.path)) {
+>     document.title = to.meta.title;
+>     next();
+>   }else {
+>     next('/404');
+>   }
+> })
+> ```
+>
+> 
