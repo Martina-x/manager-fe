@@ -796,3 +796,74 @@ getActionMap(list) {
 - 必要信息：申请理由、申请市场...
 - 通知：申请人、审批人
 - 操作：未审批、已驳回、已审批
+
+## 动态菜单/按钮
+
+请求`getPermissionList`接口的时候会返回`menuList`和`actionList`两个数据，分别表示菜单（包含按钮）权限列表和按钮权限列表。将数据存储到内存和vuex中，以供后续使用。
+
+```js
+// Home.vue
+async getMenuList() {
+  try {
+    const { menuList, actionList } = await this.$api.getPermissionList();
+    this.userMenu = menuList;
+    this.$store.commit("saveUserMenu", menuList);
+    this.$store.commit("saveUserAction", actionList);
+  } catch (error) {
+    console.error(error);
+  }
+}
+  
+// store/index.js
+const state = {
+  menuList: storage.getItem("menuList") || [],
+  actionList: storage.getItem("actionList") || [],
+}
+// store/mutations.js
+/**
+ * Mutations业务层数据提交
+ */
+import storage from "../utils/storage"
+export default {
+  saveUserMenu(state, menuList) {
+    state.menuList = menuList;
+    storage.setItem("menuList", menuList); 
+  },
+  saveUserAction(state, actionList) {
+    state.actionList = actionList;
+    storage.setItem("actionList", actionList); 
+  }
+}
+```
+
+为了实现动态按钮，采用自定义指令的方式。
+
+> https://cn.vuejs.org/guide/reusability/custom-directives.html#custom-directives
+
+
+
+```js
+// src/index.js
+//将自定义指令全局注册到应用层级
+app.directive('has', {
+  beforeMount: (el, binding) => {
+    // 获取权限按钮列表
+    const actionList = storage.getItem('actionList');
+    // 获取指定绑定的值。比如在
+    let value = binding.value;
+    // 判断列表中是否有对应按钮权限标识，可以通过arg或者value判断都行
+    let hasPermission = actionList.includes(value);
+    if(!hasPermission) {
+      el.style = "display: none";
+      setTimeout(() => {
+        // 移除dom元素
+        el.parentNode.removeChild(el);
+      }, 0);
+    }
+  }
+})
+```
+
+在自定义指令中，冒号后跟着的是参数`arg`，等号后跟着的是绑定值`value`，都是`binding`中的字段。以`v-has:add="'user-create'"`为例，`add`是参数，`user-create`为绑定值，并且需要注意的是如果绑定的值为一个字符串，那么必须像这里`'user-create'`，如果直接`"user-create"`，那么会把`user-create`判断为一个变量。
+
+在移除使用自定义指令的dom元素时，之所以通过`setTimeout`，是因为这些逻辑是在`beforeMount`周期完成的，此时节点还在vdom节点中，还没有渲染到真正的dom中，无法直接删除。所以通过`setTimeout`添加一个宏任务，放在堆栈中，下次轮询的时候再来删除dom元素。

@@ -258,7 +258,7 @@ export default {
       const deep = (arr) => {
         while (arr.length) {
           const item = arr.pop();
-          if (item.children && item.action) {    // 子菜单为操作按钮
+          if (item.children && item.action) {    // 子菜单均为操作按钮
             actionMap[item._id] = item.menuName;
           }
           if (item.children && !item.action) {   // 还没有到最后一级，递归
