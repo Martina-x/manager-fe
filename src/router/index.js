@@ -1,6 +1,10 @@
 import { createRouter, createWebHashHistory } from "vue-router";
 
+import User from "@/views/User.vue";
 import Home from "@/components/Home.vue";
+import storage from "@/utils/storage.js";
+import api from "@/api";
+import utils from '@/utils/utils';
 
 const routes = [
   {
@@ -10,7 +14,8 @@ const routes = [
     },
     path: '/',
     redirect: '/welcome',
-    component: Home,
+    // component: Home,
+    component: () => import('@/components/Home.vue'),
     children: [
       {
         name: 'Welcome',
@@ -20,38 +25,38 @@ const routes = [
         path: '/welcome',
         component: () => import('@/views/Welcome.vue'),
       },
-      {
-        name: 'User',
-        meta: {
-          title: '用户管理'
-        },
-        path: '/system/user',
-        component: () => import('@/views/User.vue'),
-      },
-      {
-        name: 'Menu',
-        meta: {
-          title: '菜单管理'
-        },
-        path: '/system/menu',
-        component: () => import('@/views/Menu.vue'),
-      },
-      {
-        name: 'Role',
-        meta: {
-          title: '角色管理'
-        },
-        path: '/system/role',
-        component: () => import('@/views/Role.vue'),
-      },
-      {
-        name: 'Dept',
-        meta: {
-          title: '部门管理'
-        },
-        path: '/system/dept',
-        component: () => import('@/views/Dept.vue'),
-      }
+      // {
+      //   name: 'User',
+      //   meta: {
+      //     title: '用户管理'
+      //   },
+      //   path: '/system/user',
+      //   component: () => import('@/views/User.vue'),
+      // },
+      // {
+      //   name: 'Menu',
+      //   meta: {
+      //     title: '菜单管理'
+      //   },
+      //   path: '/system/menu',
+      //   component: () => import('@/views/Menu.vue'),
+      // },
+      // {
+      //   name: 'Role',
+      //   meta: {
+      //     title: '角色管理'
+      //   },
+      //   path: '/system/role',
+      //   component: () => import('@/views/Role.vue'),
+      // },
+      // {
+      //   name: 'Dept',
+      //   meta: {
+      //     title: '部门管理'
+      //   },
+      //   path: '/system/dept',
+      //   component: () => import('@/views/Dept.vue'),
+      // }
 
     ]
   },
@@ -77,6 +82,26 @@ const router = createRouter({
   routes,
   history: createWebHashHistory()
 })
+
+async function loadAsyncRoutes() {
+  // 判断用户是否已登录
+  let userInfo = storage.getItem('userInfo') || {};
+  if (userInfo.token) {
+    try {
+      const { menuList } = await api.getPermissionList();
+      let routes = utils.generateRoute(menuList);
+      const modules = import.meta.glob('../views/*.vue');
+      routes.forEach((route) => {
+        route.component = modules[`../views/${route.component}.vue`];
+        router.addRoute("Home", route);
+      })
+    } catch (error) {
+      console.log(error);
+    }
+  }
+}
+await loadAsyncRoutes();
+console.log(router.getRoutes());
 
 // 判断当前地址是否可以访问
 function checkPermission(path) {

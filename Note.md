@@ -890,23 +890,177 @@ router.beforeEach((to, from, next) => {
 > ```js
 > // 判断当前地址是否可以访问
 > function checkPermission(path) {
->   let hasPermission = router.getRoutes().filter(route => route.path == path).length;
->   if (hasPermission) {
->     return true;
->   } else {
->     return false;
->   }
+>   	let hasPermission = router.getRoutes().filter(route => route.path == path).length;
+>   	if (hasPermission) {
+>        return true;
+>   	} else {
+>     		return false;
+>   	}
 > }
 > 
 > // 导航守卫
 > router.beforeEach((to, from, next) => {
->   if (checkPermission(to.path)) {
->     document.title = to.meta.title;
->     next();
->   }else {
->     next('/404');
->   }
+>   	if (checkPermission(to.path)) {
+>     	document.title = to.meta.title;
+>     	next();
+>   	}else {
+>    	 next('/404');
+>   	}
 > })
 > ```
->
 > 
+> 这两种方式都可以用来判断当前路由是否存在，前一种是通过`name`来判断，这一种是通过`path`来判断
+
+## 动态路由
+
+> 教程的演示代码：
+>
+> <img src="https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240525004619243-17166469622551.png" alt="image-20240525004619243" style="zoom: 50%;" />
+>
+> <img src="https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240525004624376-17166469700594.png" alt="image-20240525004624376" style="zoom:50%;" />
+
+**思路**：从菜单权限例表`menuList`中提取菜单项，再通过`router.addRoute()`添加路由。
+
+根据`menuList`动态拼接路由的函数`generateRoute`抽取到公共方法中：
+
+```js
+// utils/utils.js
+export default {
+  // 动态拼接路由
+  generateRoute(menuList) {
+    let routes = [];
+    const deep = list => {
+      list.forEach(item => {
+        if (item.action) {
+          routes.push({
+            name: item.component,
+            meta: {
+              title: item.menuName,
+            },
+            path: item.path,
+            component: item.component
+          })
+        }
+        if (item.children && !item.action) {
+          deep(item.children);
+        }
+      });
+    }
+    deep(menuList);
+    return routes;
+  }
+}
+```
+
+根据菜单模块的设计，路由的`name`、`meta.title`、`path`、`component`都可以从`menuList`的菜单中提取到。
+
+将路由文件中的静态路由只保留跟页面和登陆页面，其他的路由通过获取权限列表后动态添加
+
+```js
+// router/index.js
+async function loadAsyncRoutes() {
+  // 判断用户是否已登录
+  let userInfo = storage.getItem('userInfo') || {};
+  if (userInfo.token) {
+    try {
+      const { menuList } = await api.getPermissionList();
+      let routes = utils.generateRoute(menuList);
+      const modules = import.meta.glob('../views/*.vue');
+      routes.forEach((route) => {
+        let url = `../views/${route.component}.vue`;
+        route.component = modules[url];
+        router.addRoute("Home", route);
+      })
+    } catch (error) {
+      console.log(error);
+    }
+  }
+}
+await loadAsyncRoutes();
+```
+
+要注意的是，页面文件的命名最好不要太复杂，创建菜单的时候也不需要填入完整的路径，因为一般情况下页面文件都是固定在`views`目录下的，所以只需要知道文件名称，然后通过代码动态控制地址会更方便了。像这里`routes`的结构如下：
+
+<img src="https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240526015536259.png" alt="image-20240526015536259" style="zoom:50%;" />
+
+在动态加载路由的时候，`compoennt`的地址：
+
+- 地址需要添加.vue后缀
+- 不可以使用`@/views`
+
+另外，很重要的一点。在这里动态导入路由的时候，使用了vite的glob导入，而不是像最上方演示代码给出的`()=>import(url)`。
+
+首先来看一下代码改成直接`import`导入的效果。
+
+```js
+routes.forEach((route) => {
+  let url = `../views/${route.component}.vue`;
+  route.component = () => import(url);
+  // route.component = modules[`../views/${route.component}.vue`];
+  router.addRoute("Home", route);
+})
+```
+
+此时，动态添加路由的页面<u>可以正常访问</u>，但是控制台会有警告：
+
+![image-20240526021132878](https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240526021132878.png)
+
+在通过`addRoute`添加路由前，打印`route.component`：
+
+<img src="https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240526021426295.png" alt="image-20240526021426295" style="zoom:50%;" />
+
+这个信息表示在`vite`中动态导入的时候有出错，查了网上有说是不能使用模板字符串导入动态路由，而在演示代码中将url单独提出来再使用`import(url)`好像也是因为避免这个原因。但现在这样的代码一样会显示这样的信息。
+
+另一方面，通过打印`router.getRoutes()`来看一下现在的路由表：
+
+![image-20240526021820572](https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240526021820572.png)
+
+<img src="https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240526021851480.png" alt="image-20240526021851480" style="zoom:50%;" />
+
+这里给出的两个都是动态导入的路由，咱就是也不知道为什么`components`在路由表中的表现为什么不同。并且这个时候发现，在路由表中，新导入的这两个组件并没有像`addRoute("Home",route)`设想的一样出现在名为`Home`的路由下的`children`属性中，也就是他们直接出现在了根目录下，但是其实静态路由中Home组件原本也有一个子路由，这个路由是早就定义好的不是动态加入的，Home组件的children中有这个路由，但是同时这个路由一样出现在根目录下。在这里我一开始认为的是并没有成功把两个新的路由添加为Home的子路由。
+
+这个问题真的是，我感觉查遍了全网，都没找到一个说清楚的，也都是说为什么动态添加的路由都添加成了一级的路由。有的说是`addRoute`第一个参数`parentName`没有写对，要写父路由的`name`属性值，但是这个问题我也确实没有出错。后来想着说既然页面可以成功访问，也就是路由确实添加进来了，层级对不对先不说，那就看一下添加进来的路由的父路由是怎么样的吧。
+
+在前置守卫中把参数`to`打印看一下：
+
+![image-20240526023240616](https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240526023240616.png)
+
+这里的`matched`数组包含了当前路径匹配到的所有路由记录，按照从上至下的顺序排列，即从父路由到子路由。可以看到父路由又确实是`Home`，所以其实也确实把动态加入的这个`User`添加为了`Home`的子路由。
+
+ok，fine那就不纠结这个问题了。
+
+提回一开始vite的警告`The above dynamic import cannot be analyzed by Vite.`，查了资料是说要换成vite的`glob`导入。代码修改如下：
+```js
+try {
+  const { menuList } = await api.getPermissionList();
+  let routes = utils.generateRoute(menuList);
+  const modules = import.meta.glob('../views/*.vue');
+  routes.forEach((route) => {
+    route.component = modules[`../views/${route.component}.vue`];
+    router.addRoute("Home", route);
+  })
+} catch (error) {
+  console.log(error);
+}
+```
+
+[vite文档](https://cn.vitejs.dev/guide/features.html#dynamic-import)提到匹配到的文件默认是懒加载的，通过动态导入实现，glob导入结果`modules`打印如下：
+
+![image-20240526024634989](https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240526024634989.png)
+
+此时再打印`route.component`就是稳定的：
+
+<img src="https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240526024825942.png" alt="image-20240526024825942" style="zoom:67%;" />
+
+不过这里关于新的路由表，我也不是很懂为什么这两个的`components`表现也有区别就是了：
+
+![image-20240526025045750](https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240526025045750.png)
+
+<img src="https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240526025115645.png" alt="image-20240526025115645" style="zoom:50%;" />
+
+# 参考文章
+
+[Vue-Router根据用户权限添加动态路由（侧边栏菜单）](https://www.yuezeyi.com/502.html)
+
+[Vue3和vite项目踩炕提示The above dynamic import cannot be analyzed by Vite.](https://www.yuezeyi.com/499.html)
+

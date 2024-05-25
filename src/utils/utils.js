@@ -37,5 +37,28 @@ export default {
       }
     }
     return fmt;
+  },
+  // 动态拼接路由
+  generateRoute(menuList) {
+    let routes = [];
+    const deep = list => {
+      list.forEach(item => {
+        if (item.action) {
+          routes.push({
+            name: item.component,
+            meta: {
+              title: item.menuName,
+            },
+            path: item.path,
+            component: item.component
+          })
+        }
+        if (item.children && !item.action) {
+          deep(item.children);
+        }
+      });
+    }
+    deep(menuList);
+    return routes;
   }
 }
