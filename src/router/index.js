@@ -1,7 +1,5 @@
 import { createRouter, createWebHashHistory } from "vue-router";
 
-import User from "@/views/User.vue";
-import Home from "@/components/Home.vue";
 import storage from "@/utils/storage.js";
 import api from "@/api";
 import utils from '@/utils/utils';
