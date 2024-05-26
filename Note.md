@@ -779,6 +779,7 @@ getActionMap(list) {
 }
 ```
 
+<<<<<<< HEAD
 # 工作流
 
 概念：部分或整体业务实现计算机环境下的自动化。
@@ -1064,3 +1065,114 @@ try {
 
 [Vue3和vite项目踩炕提示The above dynamic import cannot be analyzed by Vite.](https://www.yuezeyi.com/499.html)
 
+=======
+# 部门管理
+
+## 自动匹配负责人邮箱
+
+创建/编辑的弹窗内容如下：
+
+<img src="D:/Documents/Typora/Pic/Note/image-20240526091432753.png" alt="image-20240526091432753" style="zoom:50%;" />
+
+**要点1**：上级部门初始值为`[null]`，因为创建一级部门时无上级部门，但是校验规则上级部门为必填项
+
+**要点2**：负责人邮箱是禁止修改的，但是它的值会根据“负责人”的变化而自动变化。实现思路是，提前获取所有用户列表，当字段名为”负责人“的select发生变化时，同时保留该用户对应的”用户邮箱“属性值，赋值给表单的”负责人邮箱“字段。
+
+代码框架如下
+
+```vue
+<template>
+  <el-form :model="dialogForm" ref="dialogFormRef" :rules="rules" label-width="100px">
+    <el-form-item label="负责人" prop="user">
+      <el-select v-model="dialogForm.xxx" @change="handleUser">
+        <el-option
+          v-for="item in userList"
+          :key="item.userId"
+          :label="item.userName"
+          :value="..."
+        />
+      </el-select>
+    </el-form-item>
+    <el-form-item label="负责人邮箱" prop="userEmail">
+      <el-input disabled v-model="dialogForm.userEmail"></el-input>
+    </el-form-item>
+  </el-form>
+</template>
+```
+
+`el-option`不用说，遍历的是全部用户列表`userList`，对于每个元素，我们用到的属性有`userId`，`userName`，`userEmail`，其中`userId`作为唯一`key`，`userName`作为`select`显示的值，`userEmail`用作`dialogForm.userEmail`的值，并且这三个值都是表单需要提交的数据。
+
+显然`dialogForm.userEmail`无法编辑，但是通过`handleUser`监听select选择器中`v-model`值的变化，可以从而修改表单中的`userId`，`userName`，`userEmail`。所以select选择器绑定的值`value`不能仅是`userName`，因为除此之外没有别的渠道可以灵活提取对应的`userEmail`，换个思路，我们将`userId`，`userName`，`userEmail`都保存在这个`value`里，反正显示值`label`是`item.userName`就可以了。此时设这个表单项对应的字段是`dialogForm.user`，之后如果要提交表单提炼出所需的数据，然后再删除这个字段就好了。上述代码修改为：
+
+```vue
+<template>
+  <el-form :model="dialogForm" ref="dialogFormRef" :rules="rules" label-width="100px">
+    <el-form-item label="负责人" prop="user">
+      <el-select placeholder="请选择部门负责人" v-model="dialogForm.user" @change="handleUser">
+        <el-option
+          v-for="item in userList"
+          :key="item.userId"
+          :label="item.userName"
+          :value="`${item.userId}/${item.userName}/${item.userEmail}`"
+        />
+      </el-select>
+    </el-form-item>
+    <el-form-item label="负责人邮箱" prop="userEmail">
+      <el-input disabled placeholder="请输入负责人邮箱" v-model="dialogForm.userEmail"></el-input>
+    </el-form-item>
+  </el-form>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      userList: [],
+      dialogForm: {
+        parentId: [null]
+      },
+      user: {
+        userId: "",
+        userName: "",
+        userEmail: ""
+      },
+    }
+  },
+  mounted() {
+    this.getAllUserList();
+  },
+  methods: {
+    async getAllUserList() {
+      this.userList = await this.$api.getAllUserList();
+    },
+    handleUser(val) {
+      const [userId, userName, userEmail] = val.split('/');
+      // 更新表单中的userId, userName, userEmail字段
+      Object.assign(this.dialogForm, {userId, userName, userEmail});
+    },
+    handleEdit(row) {
+      this.action = "edit";
+      this.dialogVisible = true;
+      this.$nextTick(()=> {
+        // 编辑部门信息时，根据row的数据，拼接dialogForm.user,作为select选择器的绑定值
+        Object.assign(this.dialogForm, row, {
+          user: `${row.userId}/${row.userName}/${row.userEmail}`
+        });
+      })
+    },
+    handleSubmit() {
+      this.$refs['dialogFormRef'].validate(async (valid) => {
+        if (valid) {
+          let params = {...this.dialogForm, action: this.action};
+          // 在提交表单之前删去多余的user字段
+          delete params.user;
+          // 请求接口，提交数据
+        }
+      })
+    }
+  }
+}
+</script>
+```
+
+>>>>>>> 10部门管理模块
