@@ -1173,3 +1173,202 @@ export default {
 }
 </script>
 ```
+
+# 休假申请
+
+## ==遇到问题==
+
+```vue
+<template>
+  <div class="user-manager">
+
+    <div class="base-table">
+      <div class="action">
+        <el-button type="primary" @click="handleCreate">申请休假</el-button>
+      </div>
+    </div>
+    <el-dialog
+      v-model="showModel"
+    >
+      <el-form :model="dialogForm" label-width="120px" :rules="rules" ref="dialogFormRef">
+        <el-form-item prop="applyType" label="休假类型" required>
+          <el-select v-model="dialogForm.applyType" style="width: 140px">
+            <el-option label="事假" :value="1" />
+            <el-option label="调休" :value="2" />
+            <el-option label="年假" :value="3" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="休假时间" required>
+          <el-row>
+            <el-col :span="10">
+              <el-form-item prop="startTime">
+                <el-date-picker v-model="dialogForm.startTime" type="datetime" placeholder="选择开始日期"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="2" style="text-align:center">-</el-col>
+            <el-col :span="10">
+              <el-form-item prop="endTime">
+                <el-date-picker v-model="dialogForm.endTime" type="datetime" placeholder="选择结束日期"/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form-item>
+        <el-form-item label="休假时长" prop="leaveTime" required>0天</el-form-item>
+        <el-form-item label="休假原因" prop="reasons">
+          <el-input v-model="dialogForm.reasons" type="textarea" :rows="3" placeholder="请输入休假原因" />
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+export default {
+  setup() {
+    // 创建休假弹框表单
+    const dialogForm = reactive({
+      applyType: 1,
+      startTime: "",
+      endTime: "",
+      leaveTime: "0天",
+      reasons: ""
+    });
+    const action = ref("create");
+    const showModel = ref(false);
+    // 点击申请休假-展示弹框
+    const handleCreate = () => {
+      showModel.value = true;
+      action.value = "create";
+    }
+  }
+}
+</script>
+```
+
+通过上述代码实现弹框：
+
+<img src="D:/Documents/Typora/Pic/Note/image-20240526165401228.png" alt="image-20240526165401228" style="zoom:50%;" />
+
+其中通过嵌套的方式将`startTime`和`endTime`分别包裹在一个`el-form-item`中的同时也被一个`el-form-item`包裹，是为了实现这两者在同一行，但是并不作为同一个表单项。
+
+当第一次点击“申请休假”按钮时，响应式的showmodel值修改为true，弹框可以正常打开，但此时控制台发出警告。但是弹框可以正常打开：
+
+![](https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240526170419782-17167142863911.png)
+
+如果直接搜索报错信息提示的是跟计算属性有关的什么脏值之类的，但是这里也没用到`computed`。排查之后发现就是这块嵌套的代码影响了
+
+```vue
+<el-form-item label="休假时间" required>
+  <el-row>
+    <el-col :span="10">
+      <el-form-item prop="startTime">
+        <el-date-picker v-model="dialogForm.startTime" type="datetime" placeholder="选择开始日期"/>
+      </el-form-item>
+    </el-col>
+    <el-col :span="2" style="text-align:center">-</el-col>
+    <el-col :span="10">
+      <el-form-item prop="endTime">
+        <el-date-picker v-model="dialogForm.endTime" type="datetime" placeholder="选择结束日期"/>
+      </el-form-item>
+    </el-col>
+  </el-row>
+</el-form-item>
+```
+
+看了一下vue devtools，有这样的一个耗时分析：
+
+![image-20240526171119232](D:/Documents/Typora/Pic/Note/image-20240526171119232.png)
+
+不清楚是不是跟耗时过多有关，跟其他的对比确实很大。
+
+<img src="D:/Documents/Typora/Pic/Note/image-20240526171206515.png" alt="image-20240526171206515" style="zoom:50%;" />
+
+elementplus文档其实也有这种嵌套的写法（代码都是差不多的），拷贝过来之后发现同样也会出现这个警告的问题。
+
+<img src="D:/Documents/Typora/Pic/Note/image-20240526171308886.png" alt="image-20240526171308886" style="zoom:33%;" />
+
+<img src="D:/Documents/Typora/Pic/Note/image-20240526171302906.png" alt="image-20240526171302906" style="zoom:50%;" />
+
+## 创建休假申请
+
+弹框UI实现如下：
+
+<img src="https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240526213126375.png" alt="image-20240526213126375" style="zoom:50%;" />
+
+### 计算休假时长
+
+相关代码如下：
+
+```vue
+<template>
+  <div class="user-manager">
+    <el-dialog v-model="showModel" title="申请休假" :close-on-click-modal="false" :close-on-press-escape=false
+      @close="resetForm('dialogFormRef')">
+      <el-form :model="dialogForm" label-width="120px" :rules="rules" ref="dialogFormRef">
+        <el-form-item label="休假时间" required>
+          <el-row>
+            <el-col :span="10">
+              <el-form-item prop="startTime">
+                <el-date-picker v-model="dialogForm.startTime" type="datetime" placeholder="选择开始日期" @change="(val) => handleDateChange('startTime', val)"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="2" style="text-align:center">-</el-col>
+            <el-col :span="10">
+              <el-form-item prop="endTime">
+                <el-date-picker v-model="dialogForm.endTime" type="datetime" placeholder="选择结束日期" @change="(val) => handleDateChange('endTime', val)"/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form-item>
+        <el-form-item label="休假时长" prop="leaveTime" required>
+          {{ dialogForm.leaveTime }}
+        </el-form-item>
+      </el-form> 
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+export default {
+  setup() {
+    // 创建休假弹框表单
+    const dialogForm = reactive({
+      applyType: 1,
+      startTime: "",
+      endTime: "",
+      leaveTime: "0天",
+      reasons: ""
+    });
+
+    // 获取休假时长
+    const handleDateChange = (key, val) => {
+      const { startTime, endTime } = dialogForm;
+      if(!startTime || !endTime) return;
+      if(startTime > endTime) {
+        proxy.$message.error("开始时间不能晚于结束时间");
+        setTimeout(() => {
+          dialogForm[key] = "0天";
+        }, 0)
+        return;
+      } else {
+        dialogForm.leaveTime = Math.round((endTime - startTime) / ( 24 * 60 * 60 * 1000) + 1) + '天'
+      }
+    }
+  }
+}
+</script>
+```
+
+通过在`startTime`和`endTime`对应的时间选择器上绑定`change`事件获取两个字段值的变化，从而计算休假时长`leaveTime`
+
+```vue
+<el-date-picker @change="(val) => handleDateChange('startTime', val)"/>
+<el-date-picker @change="(val) => handleDateChange('endTime', val)"/>
+```
+
+形式是一个回调函数，调用`handleDateChange`函数，并指明当前变化的`key`，否则控件调用同一个方法无法区分是哪个字段值在变化。
+
+`leaveTime`的计算要求：
+
+- `startTime`和`endTime`均不为空，且`startTime`不能大于`endTime`
+- `endTime`-`startTime`的结果是毫秒为单位，所以需要÷(24 * 60 * 60 * 1000)，商再加一
