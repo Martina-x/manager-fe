@@ -1372,3 +1372,85 @@ export default {
 
 - `startTime`和`endTime`均不为空，且`startTime`不能大于`endTime`
 - `endTime`-`startTime`的结果是毫秒为单位，所以需要÷(24 * 60 * 60 * 1000)，商再加一
+
+## 查看休假详情
+
+看一下UI的实现
+
+<img src="D:/Documents/Typora/Pic/Note/image-20240527183732839.png" alt="image-20240527183732839" style="zoom:33%;" />
+
+详情弹窗内容包括步骤条和表单两部分。
+
+首先来看表单部分内容，这里的详情信息是有对原数据进行一个转换的。
+
+```vue
+<template>
+  <div class="user-manager">
+    <el-dialog v-model="showDetailModal" title="申请休假详情" :close-on-click-modal="false" :close-on-press-escape=false destroy-on-close>
+      <el-steps style="max-width: 600px" :space="200" :active="detail.applyState > 2 ? 3 : detail.applyState" align-center>
+        <el-step title="待审批" />
+        <el-step title="审批中" />
+        <el-step title="审批通过/拒绝" />
+      </el-steps>
+      <el-form label-width="120px" label-suffix=":">
+        <el-form-item label="休假类型">
+          <div>{{ detail.applyTypeName }}</div>
+        </el-form-item>
+        <el-form-item label="休假时间">
+          <div>{{ detail.time }}</div>
+        </el-form-item>
+        <el-form-item label="休假时长">
+          <div>{{ detail.leaveTime }}</div>
+        </el-form-item>
+        <el-form-item label="休假原因">
+          <div>{{ detail.reasons }}</div>
+        </el-form-item>
+        <el-form-item label="审批状态">
+          <div>{{ detail.applyStateName }}</div>
+        </el-form-item>
+        <el-form-item label="审批人">
+          <div>{{ detail.curAuditUserName }}</div>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+  </div>
+
+</template>
+
+<script>
+export default {
+  setup() {
+    // 创建休假申请详情表单
+    let detail = ref({});
+    const showDetailModal = ref(false);
+    
+    // 查看申请详情
+    const handleDetail = (row) => {
+      let data = {...row}; // {1}
+      data.applyTypeName = {
+        1: '事假',
+        2: '调休',
+        3: '年假'
+      }[data.applyType];
+      data.time = utils.formatDate(new Date(data.startTime), "yyyy-MM-dd") + '到' + utils.formatDate(new Date(data.endTime), "yyyy-MM-dd");
+      data.applyStateName = {
+        1: "待审批",
+        2: "审批中",
+        3: "审批拒绝",
+        4: "审批通过",
+        5: "作废"
+      }[data.applyState]
+      detail.value = data;
+      showDetailModal.value = true;
+    }
+}
+</script>
+```
+
+原数据在点击“查看”按钮时通过`scope.row`传递，{1}对其进行浅拷贝，然后再根据数据设计添加表单中显示的`applyTypeName`、`applyStateName`等字段。
+
+> 这里的`detail`依然是通过`ref`来初始化的，不用`reactive`的原因是这样通过`detail = data;`更新会把`detail`覆盖掉，不再是一个响应式对象。如果是直接定义为一个常量`{}`，那么无法通过`detail = data;`绑定`detail`，因为这里`detail`默认为空，所以挂载上去的时候也为空，当弹出详情框的时候直接赋值，这个时候双向绑定已经失效了，因为初始化是空，当弹框弹出来的时候没有办法去赋值，`detail=data`已经把他变成一个变量。这不同于`rules`，它是直接挂载的能够直接解析，不需要双向绑定。而弹框默认是关闭的，如果是直接赋值没有问题，但是弹框重新弹出来无法把值赋上去。
+>
+> 说的口水话一点，我的理解是：初始化detail={}的时候，双向绑定认定的其实是{}这个对象的地址，这个时候的`detail`也是表示这个地址，然后指向{}。当执行detail=data的时候相当于将detail的指向改变为 data 对象，然后vue认定绑定的对象依然是一开始那个地址，而它自身没有变化，还是一个{}空对象，所以弹框无法显示`data`中的数据。
+
+步骤条组件的状态改变只需要根据`applyState`控制`active`属性即可，其中要注意的是，查看不同状态的详情信息时，有可能出现步骤条组件状态不正确的现象，原因是弹框里面有缓存，所以添加了`destroy-on-close`属性，在弹框关闭时销毁。但其实做到这里的时候我没有出现组件状态不正确的问题，可能是版本或者其他原因吧，这里也连带记录一下。
