@@ -124,7 +124,7 @@ export default {
       url: '/leave/list',
       method: 'get',
       data: params,
-      mock: true
+      mock: false
     })
   },
   applySubmit(params) {

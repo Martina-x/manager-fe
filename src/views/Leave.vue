@@ -13,7 +13,7 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary">查询</el-button>
+          <el-button type="primary" @click="getApplyList">查询</el-button>
           <el-button @click="resetForm('queryFormRef')">重置</el-button>
         </el-form-item>
       </el-form>
@@ -119,7 +119,7 @@ export default {
     const { proxy, ctx } = instance;
     // 初始化用户表单对象
     const queryForm = reactive({
-      applyState: 1
+      applyState: 0
     });
     // 初始化申请列表
     const applyList = ref([]);
@@ -331,6 +331,7 @@ export default {
       handleDateChange,
       showDetailModal,
       detail,
+      getApplyList,
       handleDetail,
       handleDelete,
     }
