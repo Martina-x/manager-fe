@@ -93,13 +93,13 @@ async function loadAsyncRoutes() {
         route.component = modules[`../views/${route.component}.vue`];
         router.addRoute("Home", route);
       })
+      
     } catch (error) {
       console.log(error);
     }
   }
 }
-await loadAsyncRoutes();
-console.log(router.getRoutes());
+
 
 // 判断当前地址是否可以访问
 function checkPermission(path) {
@@ -112,7 +112,9 @@ function checkPermission(path) {
 }
 
 // 导航守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
+  await loadAsyncRoutes();
+  console.log(router.getRoutes());
   if (router.hasRoute(to.name)) {
     document.title = to.meta.title;
     next();
