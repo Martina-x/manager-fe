@@ -146,7 +146,6 @@ export default {
       Object.assign(this.dialogForm, {userId, userName, userEmail});
     },
     handleReset(form) {
-      console.log('close');
       this.$refs[form].resetFields();
     },
     // handleClose() {
