@@ -32,7 +32,7 @@
         </div>
 
         <div class="user-info">
-          <el-badge class="notice" :is-dot="noticeCount > 0 ? true : false" type="danger">
+          <el-badge class="notice" :value="noticeCount > 0 ? noticeCount : ''" type="danger" @click="$router.push('/audit/approve')">
             <el-icon>
               <Bell />
             </el-icon>
@@ -70,7 +70,6 @@ export default {
     return {
       isCollapse: false,
       userInfo: this.$store.state.userInfo,
-      noticeCount: 0,
       userMenu: [],
       activeMenu: location.hash.slice(1)
     }
@@ -78,6 +77,11 @@ export default {
   mounted() {
     this.getNoticeCount();
     this.getMenuList();
+  },
+  computed: {
+    noticeCount() {
+      return this.$store.state.noticeCount
+    }
   },
   methods: {
     toggle() {
@@ -92,7 +96,7 @@ export default {
     async getNoticeCount() {
       try {
         const count = await this.$api.noticeCount();
-        this.noticeCount = count;
+        this.$store.commit('saveNoticeCount', count);
       } catch (error) {
         console.error(error); 
       }
@@ -201,8 +205,9 @@ export default {
 
         .notice {
           line-height: 30px;
-          margin-right: 15px;
+          margin-right: 20px;
           margin-top: 5px;
+          cursor: pointer;
         }
 
         .user-link {
@@ -223,5 +228,11 @@ export default {
     }
   }
 
+}
+
+.el-badge .el-badge__content  {
+  transform: scale(0.8);
+  right: -18px;
+  top: -5px;
 }
 </style>

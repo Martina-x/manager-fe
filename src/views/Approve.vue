@@ -245,7 +245,8 @@ export default {
             const res = await proxy.$api.handleApprove(params);
             proxy.$message.success("操作成功");
             handleClose();
-            getApplyList()
+            getApplyList();
+            proxy.$store.commit('saveNoticeCount', proxy.$store.state.noticeCount - 1);
           } catch (error) {
 
           }

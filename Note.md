@@ -1059,6 +1059,8 @@ try {
 
 <img src="https://gitee.com/martina-x/my-drawing-bed/raw/master/image-20240526025115645.png" alt="image-20240526025115645" style="zoom:50%;" />
 
+此时会发现有另一个问题，第一次页面跳转的时候报404，因为第一次导航守卫的时候还没有添加动态路由。直接粗暴在导航守卫中添加调用`loadAsyncRoutes`的代码，解决。==笔记可补充==
+
 # 参考文章
 
 [Vue-Router根据用户权限添加动态路由（侧边栏菜单）](https://www.yuezeyi.com/502.html)
@@ -1462,3 +1464,113 @@ export default {
 组件页面qian在“休假申请”页面的基础上进行修改，表格组件中添加“申请人”一列。列表展示规则是，每个用户只能看到需要自己参与审批的申请。请求待审批列表的接口与请求请假申请列表的接口是共用的，区别在于前者的请求参数会多一个字段`type:"approve"`。
 
 另外，对于“审核”按钮的显示，规则是用户是申请的当前审核人且申请处于“待审核”（当前用户是一级审核人）或“审核中”（当前用户不是一级审核人，前面的审核人都予以通过了）的状态。
+
+## 待审核通知
+
+**思路**：待审核数量随审核操作发生改变，绑定该值的`Badge`组件在`Home`组件中，所以需要使用Vuex来管理数据。审核操作 -> 请求接口 -> 更新Vuex。
+
+在`handleApprove`的逻辑代码最后，通过`proxy.$store.commit('saveNoticeCount', proxy.$store.state.noticeCount - 1);`更新Vuex中的`noticeCount`，这里之所以用`store.state.noticeCount - 1`来更新，而不是`applyList.length`来更新，原因是，`applyList`并不一直是“待我审批”列表。
+
+在`Home`组件中，使用`computed`监听vuex中`noticeCount`的变化，动态更新页面的`noticeCount`
+
+相关代码如下：
+
+store/index.js
+
+```diff
+/**
+ * Vuex状态管理
+ */
+
+import { createStore } from "vuex";
+import storage from "../utils/storage";
+import mutations from "./mutations";
+
+const state = {
+  userInfo: storage.getItem("userInfo") || {},
+  menuList: storage.getItem("menuList") || [],
+  actionList: storage.getItem("actionList") || [],
++ noticeCount: 0
+}
+
+export default createStore({
+  state,
+  mutations
+})
+```
+
+store/mutation.js
+
+```js
+/**
+ * Mutations业务层数据提交
+ */
+import storage from "../utils/storage"
+export default {
+  saveNoticeCount(state, noticeCount) {
+    state.noticeCount = noticeCount;
+    storage.setItem("noticeCount", noticeCount); 
+  }
+}
+```
+
+Approve.vue
+
+```diff
+const handleApprove = async (action) => {
+  proxy.$refs.dialogFormRef.validate(async valid => {
+    if (valid) {
+      let params = {
+        _id: detail.value._id,
+        remark: dialogForm.remark,
+        action: action
+      }
+      try {
+        const res = await proxy.$api.handleApprove(params);
+        proxy.$message.success("操作成功");
+        handleClose();
+        getApplyList();
++       proxy.$store.commit('saveNoticeCount', proxy.$store.state.noticeCount - 1);
+      } catch (error) {
+      }
+    }
+  })
+}
+```
+
+Home.vue
+
+```diff
+- <el-badge class="notice" :is-dot="noticeCount > 0 ? true : false" type="danger">
++ <el-badge class="notice" :value="noticeCount > 0 ? noticeCount : ''" type="danger" @click="$router.push('/audit/approve')">
+  <el-icon><Bell /></el-icon>
+</el-badge>
+         
+
+export default {
+  data() {
+    return {
+-     noticeCount: 0,
+    }
+  },
++ computed: {
++   noticeCount() {
++     return this.$store.state.noticeCount
++   }
++ },
+  methods: {
+    async getNoticeCount() {
+      try {
+        const count = await this.$api.noticeCount();
+-       this.noticeCount = count;
++       this.$store.commit('saveNoticeCount', count);
+      } catch (error) {
+        console.error(error); 
+      }
+      
+    },
+  }
+}
+</script>
+```
+
