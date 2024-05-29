@@ -25,7 +25,8 @@
           :formatter="item.formatter" />
         <el-table-column fixed="right" label="操作" width="155">
           <template #default="scope">
-            <el-button size="small" v-if="scope.row.curAuditUserName == userInfo.userName && [1,2].includes(scope.row.applyState)">审核</el-button>
+            <el-button size="small" @click="handleDetail(scope.row)"
+              v-if="scope.row.curAuditUserName == userInfo.userName && [1, 2].includes(scope.row.applyState)">审核</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -34,13 +35,18 @@
           :page-size="pager.pageSize" @current-change="handleCurrentChange" />
       </div>
     </div>
-    <el-dialog v-model="showDetailModal" title="申请休假详情" :close-on-click-modal="false" :close-on-press-escape=false destroy-on-close>
-      <el-steps style="max-width: 600px" :space="200" :active="detail.applyState > 2 ? 3 : detail.applyState" align-center>
+    <el-dialog v-model="showDetailModal" title="申请休假详情" :close-on-click-modal="false" :close-on-press-escape=false
+      destroy-on-close>
+      <el-steps style="max-width: 600px" :space="200" :active="detail.applyState > 2 ? 3 : detail.applyState"
+        align-center>
         <el-step title="待审批" />
         <el-step title="审批中" />
         <el-step title="审批通过/拒绝" />
       </el-steps>
-      <el-form label-width="120px" label-suffix=":">
+      <el-form :model="dialogForm" ref="dialogFormRef" label-width="120px" label-suffix=":" :rules="rules">
+        <el-form-item label="申请人">
+          <div>{{ detail.applyUser.userName }}</div>
+        </el-form-item>
         <el-form-item label="休假类型">
           <div>{{ detail.applyTypeName }}</div>
         </el-form-item>
@@ -59,7 +65,16 @@
         <el-form-item label="审批人">
           <div>{{ detail.curAuditUserName }}</div>
         </el-form-item>
+        <el-form-item label="备注" prop="remark" required>
+          <el-input v-model="dialogForm.remark" type="textarea" :row="3" placeholder="请输入审批备注" />
+        </el-form-item>
       </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleApprove('pass')">审核通过</el-button>
+          <el-button type="danger" @click="handleApprove('refuse')">驳回</el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 
@@ -74,10 +89,14 @@ export default {
     // 获取Composition API上下文对象
     const instance = getCurrentInstance();
     const { proxy, ctx } = instance;
-    
+
     // 初始化用户表单对象
     const queryForm = reactive({
       applyState: 1
+    });
+    // 初始化详情表单
+    const dialogForm = reactive({
+      remark: ""
     });
     // 初始化申请列表
     const applyList = ref([]);
@@ -85,14 +104,8 @@ export default {
     let detail = ref({});
     const userInfo = proxy.$store.state.userInfo;
     const rules = {
-      startTime: [
-        { type: "date", required: true, message: '请选择开始日期', triggle: 'change' }
-      ],
-      endTime: [
-        { type: "date", required: true, message: '请选择结束日期', triggle: 'blur' }
-      ],
-      reasons: [
-        { required: true, message: '请输入请假原因', triggle: 'blur' }
+      remark: [
+        { required: true, message: '请输入审核备注', triggle: 'change' }
       ]
     }
     const showDetailModal = ref(false);
@@ -219,8 +232,37 @@ export default {
       showDetailModal.value = true;
     }
 
+    // 审核
+    const handleApprove = async (action) => {
+      proxy.$refs.dialogFormRef.validate(async valid => {
+        if (valid) {
+          let params = {
+            _id: detail.value._id,
+            remark: dialogForm.remark,
+            action: action
+          }
+          try {
+            const res = await proxy.$api.handleApprove(params);
+            proxy.$message.success("操作成功");
+            handleClose();
+            getApplyList()
+          } catch (error) {
+
+          }
+        }
+      })
+
+    }
+
+    // 关闭弹框
+    const handleClose = () => {
+      showDetailModal.value = false;
+      resetForm('dialogFormRef');
+    }
+
     return {
       queryForm,
+      dialogForm,
       applyList,
       columns,
       detail,
@@ -232,6 +274,7 @@ export default {
       showDetailModal,
       getApplyList,
       handleDetail,
+      handleApprove
     }
   }
 }

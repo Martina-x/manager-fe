@@ -134,5 +134,13 @@ export default {
       data: params,
       mock: false
     })
+  },
+  handleApprove(params) {
+    return request({
+      url: '/leave/approve',
+      method: 'post',
+      data: params,
+      mock: false
+    })
   }
 }
